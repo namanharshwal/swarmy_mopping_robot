@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>swarmy_description</name>
+  <version>0.1.0</version>
+  <description>Robot description package for Swarmy mobile robot</description>
+  <maintainer email="swarmy@robot.local">Naman Sain</maintainer>
+  <license>MIT</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>urdf</build_depend>
+  <build_depend>xacro</build_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>joint_state_publisher</exec_depend>
+  <exec_depend>joint_state_publisher_gui</exec_depend>
+  <exec_depend>rviz</exec_depend>
+  <exec_depend>tf</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>xacro</exec_depend>
+</package>

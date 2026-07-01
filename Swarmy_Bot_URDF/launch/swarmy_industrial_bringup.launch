@@ -1,0 +1,74 @@
+<launch>
+  <arg name="rviz"   default="true"/>
+  <arg name="teleop" default="false"/>
+
+  <param name="robot_description"
+         textfile="$(find Swarmy_Bot_URDF)/urdf/Swarmy_Bot_URDF.urdf"/>
+
+  <!-- robot_state_publisher publishes TF for URDF joints from /joint_states -->
+  <node pkg="robot_state_publisher"
+        type="robot_state_publisher"
+        name="robot_state_publisher"
+        output="screen">
+    <param name="publish_frequency" value="50.0"/>
+  </node>
+
+  <!-- Static TFs: base_footprint (virtual) -> base_link -> imu_link, laser_frame -->
+  <node pkg="tf"
+        type="static_transform_publisher"
+        name="basefoot_to_base"
+        args="0 0 0 0 0 0 base_footprint base_link 50"/>
+
+  <node pkg="tf"
+        type="static_transform_publisher"
+        name="base_to_imu"
+        args="0 0 0.05 0 0 0 base_link imu_link 50"/>
+
+  <!-- CRITICAL: frame_id must match G2 launch frame_id = laser_frame -->
+  <node pkg="tf"
+        type="static_transform_publisher"
+        name="base_to_laser"
+        args="0.10 0 0.12 0 0 0 base_link laser_frame 50"/>
+
+  <!-- Hardware base node: /joint_states + /wheel/odom + /imu/data_raw + cmd_vel -->
+  <node pkg="swarmy_cmd_vel"
+        type="swarmy_base_node.py"
+        name="swarmy_base_node"
+        output="screen"/>
+
+  <!-- YDLidar G2 lidar -->
+  <include file="$(find ydlidar_ros_driver)/launch/G2.launch"/>
+
+  <!-- EKF: fuses /wheel/odom + /imu/data_raw -> /odometry/filtered + TF odom->base_footprint -->
+  <node pkg="robot_localization"
+        type="ekf_localization_node"
+        name="ekf_localization_node"
+        clear_params="true"
+        output="screen">
+    <rosparam command="load"
+              file="$(find Swarmy_Bot_URDF)/config/ekf.yaml"/>
+  </node>
+
+  <!-- GMapping SLAM: /scan + /odom TF -> /map -->
+  <node pkg="gmapping"
+        type="slam_gmapping"
+        name="slam_gmapping"
+        output="screen">
+    <remap from="scan" to="/scan"/>
+    <rosparam command="load"
+              file="$(find Swarmy_Bot_URDF)/config/gmapping.yaml"/>
+  </node>
+
+  <node if="$(arg teleop)"
+        pkg="teleop_twist_keyboard"
+        type="teleop_twist_keyboard.py"
+        name="teleop"
+        output="screen"
+        launch-prefix="xterm -e"/>
+
+  <node if="$(arg rviz)"
+        pkg="rviz"
+        type="rviz"
+        name="rviz"
+        args="-d $(find Swarmy_Bot_URDF)/rviz/swarmy.rviz"/>
+</launch>

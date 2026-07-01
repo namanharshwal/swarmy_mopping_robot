@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="Swarmy_Bot_URDF">
+<link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="-0.0022038 -2.9147E-05 0.056907"
+        rpy="0 0 0" />
+      <mass
+        value="0.6411" />
+      <inertia
+        ixx="0.001273"
+        ixy="1.7039E-06"
+        ixz="-8.8623E-07"
+        iyy="0.0019601"
+        iyz="-2.5019E-07"
+        izz="0.0030778" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Swarmy_Bot_URDF/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.84314 0.81569 0.75294 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Swarmy_Bot_URDF/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="lw_link">
+    <inertial>
+      <origin
+        xyz="-2.7973E-12 9.3427E-13 -0.0051894"
+        rpy="0 0 0" />
+      <mass
+        value="0.12994" />
+      <inertia
+        ixx="0.00011932"
+        ixy="-4.5971E-15"
+        ixz="-6.5101E-15"
+        iyy="0.00011932"
+        iyz="-1.1924E-16"
+        izz="0.00021173" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Swarmy_Bot_URDF/meshes/lw_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Swarmy_Bot_URDF/meshes/lw_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="lw_joint"
+    type="continuous">
+    <origin
+      xyz="0 0.11086 0.018076"
+      rpy="-1.5708 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="lw_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      effort="10"
+      velocity="10" />
+    <dynamics
+      damping="0.1"
+      friction="0.1" />
+  </joint>
+  <link
+    name="rw_link">
+    <inertial>
+      <origin
+        xyz="9.3424E-13 -2.7974E-12 0.0051894"
+        rpy="0 0 0" />
+      <mass
+        value="0.12994" />
+      <inertia
+        ixx="0.00011932"
+        ixy="-4.5971E-15"
+        ixz="1.186E-16"
+        iyy="0.00011932"
+        iyz="6.5098E-15"
+        izz="0.00021173" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Swarmy_Bot_URDF/meshes/rw_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Swarmy_Bot_URDF/meshes/rw_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="rw_joint"
+    type="continuous">
+    <origin
+      xyz="0 -0.11086 0.018076"
+      rpy="-1.5708 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="rw_link" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      effort="10"
+      velocity="10" />
+    <dynamics
+      damping="0.1"
+      friction="0.1" />
+  </joint>
+  <link
+    name="fc_link">
+    <inertial>
+      <origin
+        xyz="0.0045618 -0.0003535 -0.004413"
+        rpy="0 0 0" />
+      <mass
+        value="0.0025913" />
+      <inertia
+        ixx="2.3519E-07"
+        ixy="-8.1922E-10"
+        ixz="3.7218E-08"
+        iyy="1.9941E-07"
+        iyz="1.3893E-09"
+        izz="2.9106E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Swarmy_Bot_URDF/meshes/fc_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.7451 0.73725 0.72941 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Swarmy_Bot_URDF/meshes/fc_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="fc_joint"
+    type="continuous">
+    <origin
+      xyz="0.071755 0 -0.0028894"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="fc_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      effort="10"
+      velocity="10" />
+  </joint>
+  <link
+    name="fcw_link">
+    <inertial>
+      <origin
+        xyz="0 -6.9389E-18 0"
+        rpy="0 0 0" />
+      <mass
+        value="0.0038261" />
+      <inertia
+        ixx="2.0561E-07"
+        ixy="-5.0731E-25"
+        ixz="-2.2457E-13"
+        iyy="2.0561E-07"
+        iyz="6.4224E-23"
+        izz="3.2679E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Swarmy_Bot_URDF/meshes/fcw_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.74902 0.74902 0.74902 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Swarmy_Bot_URDF/meshes/fcw_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="fcw_joint"
+    type="continuous">
+    <origin
+      xyz="0.012 0 -0.017111"
+      rpy="-1.5708 0 0" />
+    <parent
+      link="fc_link" />
+    <child
+      link="fcw_link" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      effort="10"
+      velocity="10" />
+    <dynamics
+      damping="0.1"
+      friction="0.1" />
+  </joint>
+  <link
+    name="rc_link">
+    <inertial>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <mass
+        value="0" />
+      <inertia
+        ixx="0"
+        ixy="0"
+        ixz="0"
+        iyy="0"
+        iyz="0"
+        izz="0" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Swarmy_Bot_URDF/meshes/rc_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Swarmy_Bot_URDF/meshes/rc_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="rc_joint"
+    type="continuous">
+    <origin
+      xyz="-0.071755 0 -0.0028894"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="rc_link" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="rcw_link">
+    <inertial>
+      <origin
+        xyz="0 0 -5.2042E-18"
+        rpy="0 0 0" />
+      <mass
+        value="0.0038261" />
+      <inertia
+        ixx="2.0561E-07"
+        ixy="-5.0732E-25"
+        ixz="-2.2457E-13"
+        iyy="2.0561E-07"
+        iyz="5.0459E-23"
+        izz="3.2679E-07" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Swarmy_Bot_URDF/meshes/rcw_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.74902 0.74902 0.74902 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://Swarmy_Bot_URDF/meshes/rcw_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="rcw_joint"
+    type="continuous">
+    <origin
+      xyz="0.012 0 -0.017111"
+      rpy="-1.5708 0 0" />
+    <parent
+      link="rc_link" />
+    <child
+      link="rcw_link" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      effort="10"
+      velocity="10" />
+    <dynamics
+      damping="0.1"
+      friction="0.1" />
+  </joint>
+</robot>

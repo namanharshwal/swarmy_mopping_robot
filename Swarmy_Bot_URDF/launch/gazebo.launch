@@ -1,0 +1,15 @@
+<launch>
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="true"/>
+    <arg name="headless" value="false"/>
+    <arg name="debug" value="false"/>
+  </include>
+
+  <param name="robot_description" textfile="$(find Swarmy_Bot_URDF)/urdf/Swarmy_Bot_URDF.urdf"/>
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher"/>
+  <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher"/>
+  <node pkg="tf" type="static_transform_publisher" name="base_to_footprint" args="0 0 0 0 0 0 base_footprint base_link 50"/>
+  <node pkg="gazebo_ros" type="spawn_model" name="spawn_model" args="-param robot_description -urdf -model Swarmy_Bot_URDF" output="screen"/>
+</launch>

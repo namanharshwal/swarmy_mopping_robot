@@ -1,0 +1,31 @@
+<package format="2">
+  <name>Swarmy_Bot_URDF</name>
+  <version>1.0.0</version>
+  <description>ROS Melodic description package for Swarmy mobile robot</description>
+
+  <maintainer email="swarmybot@example.com">swarmy_bot</maintainer>
+  <author email="swarmybot@example.com">swarmy_bot</author>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>roslaunch</depend>
+  <depend>rospy</depend>
+  <depend>tf</depend>
+  <depend>robot_state_publisher</depend>
+  <depend>joint_state_publisher</depend>
+  <depend>joint_state_publisher_gui</depend>
+  <depend>rviz</depend>
+  <depend>xacro</depend>
+  <depend>urdf</depend>
+  <depend>gazebo</depend>
+  <depend>gazebo_ros</depend>
+  <depend>gazebo_plugins</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+
+  <export>
+    <architecture_independent/>
+  </export>
+</package>

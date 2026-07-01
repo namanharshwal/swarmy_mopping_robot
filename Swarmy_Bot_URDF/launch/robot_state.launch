@@ -1,0 +1,23 @@
+<launch>
+  <param name="robot_description"
+         textfile="$(find Swarmy_Bot_URDF)/urdf/Swarmy_Bot_URDF.urdf"/>
+
+  <!-- robot_state_publisher reads /joint_states and publishes TF for all URDF joints -->
+  <node pkg="robot_state_publisher"
+        type="robot_state_publisher"
+        name="robot_state_publisher"
+        output="screen">
+    <param name="publish_frequency" value="50.0"/>
+  </node>
+
+  <!-- base_footprint is a virtual ground-level frame not in URDF -->
+  <node pkg="tf"
+        type="static_transform_publisher"
+        name="basefoot_to_base"
+        args="0 0 0 0 0 0 base_footprint base_link 50"/>
+
+  <node pkg="rviz"
+        type="rviz"
+        name="rviz"
+        args="-d $(find Swarmy_Bot_URDF)/rviz/swarmy.rviz"/>
+</launch>

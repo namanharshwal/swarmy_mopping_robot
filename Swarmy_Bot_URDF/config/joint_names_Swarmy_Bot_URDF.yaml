@@ -1,0 +1,10 @@
+# joint_names_Swarmy_Bot_URDF.yaml
+# Place at: ~/swarmy_ws/src/Swarmy_Bot_URDF/config/joint_names_Swarmy_Bot_URDF.yaml
+# FIXED: removed blank first entry, all 6 joints match URDF exactly
+controller_joint_names:
+  - lw_joint
+  - rw_joint
+  - fc_joint
+  - fcw_joint
+  - rc_joint
+  - rcw_joint

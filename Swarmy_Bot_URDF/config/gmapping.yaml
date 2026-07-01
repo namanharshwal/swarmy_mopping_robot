@@ -1,0 +1,59 @@
+# gmapping.yaml - Swarmy Bot SLAM parameters - FIXED FINAL
+# Place at: ~/swarmy_ws/src/Swarmy_Bot_URDF/config/gmapping.yaml
+#
+# FIXES vs original:
+#   base_frame: base_footprint  (was base_link - must match EKF child frame)
+#   minimumScore: 50            (rejects bad laser matches, cleaner map)
+#   particles: 80               (was 30 - more particles = better map accuracy)
+#   linearUpdate: 0.1           (was 0.2 - update more often for fine detail)
+#   angularUpdate: 0.05         (was 0.1 - update on smaller turns)
+#   maxUrange: 10.0             (G2 reliable range; was 8.0)
+#   maxRange: 12.0              (G2 max spec range)
+
+base_frame:           base_footprint
+odom_frame:           odom
+map_frame:            map
+map_update_interval:  1.0
+
+# Lidar range
+maxUrange:  10.0
+maxRange:   12.0
+
+# Scan matcher
+sigma:       0.05
+kernelSize:  1
+lstep:       0.05
+astep:       0.05
+iterations:  5
+lsigma:      0.075
+ogain:       3.0
+lskip:       0
+minimumScore: 50
+
+# Motion model (differential drive)
+srr: 0.1
+srt: 0.2
+str: 0.1
+stt: 0.2
+
+# Update triggers - fire on smaller movements for finer map
+linearUpdate:  0.1
+angularUpdate: 0.05
+temporalUpdate: 1.0
+
+# Particle filter
+particles:         80
+resampleThreshold: 0.5
+
+# Map bounds and resolution
+xmin:  -25.0
+ymin:  -25.0
+xmax:   25.0
+ymax:   25.0
+delta:  0.05
+
+# Sample ranges
+llsamplerange: 0.01
+llsamplestep:  0.01
+lasamplerange: 0.005
+lasamplestep:  0.005
