@@ -1,0 +1,7 @@
+<launch>
+  <arg name="map_file" default="$(find swarmy_navigation)/maps/lab_505.yaml"/>
+  <include file="$(find Swarmy_Bot_URDF)/launch/swarmy_nav_core_bringup.launch"/>
+  <include file="$(find swarmy_navigation)/launch/navigation.launch">
+    <arg name="map_file" value="$(arg map_file)"/>
+  </include>
+</launch>

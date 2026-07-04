@@ -1,73 +1,33 @@
-# ekf.yaml - robot_localization EKF - Swarmy Bot - FIXED FINAL
-# Place at: ~/swarmy_ws/src/Swarmy_Bot_URDF/config/ekf.yaml
-
-frequency:             50
-sensor_timeout:        0.1
-two_d_mode:            true
+frequency: 50
+sensor_timeout: 0.1
+two_d_mode: true
 transform_time_offset: 0.0
-transform_timeout:     0.1
-publish_tf:            true
-publish_acceleration:  false
+transform_timeout: 0.1
+publish_tf: true
+publish_acceleration: false
 
-map_frame:       map
-odom_frame:      odom
+map_frame: map
+odom_frame: odom
 base_link_frame: base_footprint
-world_frame:     odom
+world_frame: odom
 
-# Wheel odometry - fuse x, y, yaw pose + vx, vyaw twist
 odom0: /wheel/odom
-odom0_config: [true,  true,  false,
-               false, false, true,
-               true,  false, false,
-               false, false, true,
-               false, false, false]
+odom0_config: [true, true, false,
+false, false, true,
+true, false, false,
+false, false, true,
+false, false, false]
 odom0_differential: false
-odom0_relative:     false
-odom0_queue_size:   20
+odom0_relative: false
+odom0_queue_size: 20
 
-# IMU - MPU6050 - NO magnetometer - fuse ONLY angular_velocity.z (vyaw)
-# ax=false ay=false CRITICAL - prevents ghost drift from gravity injection
 imu0: /imu/data_raw
 imu0_config: [false, false, false,
-              false, false, false,
-              false, false, false,
-              false, false, true,
-              false, false, false]
-imu0_differential:                      false
-imu0_relative:                          true
-imu0_queue_size:                        50
+false, false, false,
+false, false, false,
+false, false, true,
+false, false, false]
+imu0_differential: false
+imu0_relative: true
+imu0_queue_size: 50
 imu0_remove_gravitational_acceleration: false
-
-# Process noise covariance Q (15x15)
-process_noise_covariance: [0.05,  0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
-                           0.0,   0.05,  0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
-                           0.0,   0.0,   0.06,  0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
-                           0.0,   0.0,   0.0,   0.03,  0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
-                           0.0,   0.0,   0.0,   0.0,   0.03,  0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
-                           0.0,   0.0,   0.0,   0.0,   0.0,   0.06,  0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
-                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.025,  0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
-                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.025,  0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
-                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.04,  0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
-                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.01,  0.0,   0.0,   0.0,   0.0,   0.0,
-                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.01,  0.0,   0.0,   0.0,   0.0,
-                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.02,  0.0,   0.0,   0.0,
-                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.01,  0.0,   0.0,
-                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.01,  0.0,
-                           0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.015]
-
-# Initial estimate covariance P0 (15x15) - near zero = full confidence at origin
-initial_estimate_covariance: [1.0e-9, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
-                              0.0,    1.0e-9, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
-                              0.0,    0.0,    1.0e-9, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
-                              0.0,    0.0,    0.0,    1.0e-9, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
-                              0.0,    0.0,    0.0,    0.0,    1.0e-9, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
-                              0.0,    0.0,    0.0,    0.0,    0.0,    1.0e-9, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
-                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    1.0e-9, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
-                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    1.0e-9, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
-                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    1.0e-9, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
-                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    1.0e-9, 0.0,    0.0,    0.0,    0.0,    0.0,
-                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    1.0e-9, 0.0,    0.0,    0.0,    0.0,
-                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    1.0e-9, 0.0,    0.0,    0.0,
-                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    1.0e-9, 0.0,    0.0,
-                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    1.0e-9, 0.0,
-                              0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    1.0e-9]

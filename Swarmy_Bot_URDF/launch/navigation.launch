@@ -1,0 +1,26 @@
+<launch>
+  <arg name="map_file" default="$(env HOME)/swarmy_ws/maps/hostel_room_map.yaml"/>
+
+  <node pkg="map_server" type="map_server" name="map_server" args="$(arg map_file)" output="screen"/>
+
+  <rosparam file="$(find Swarmy_Bot_URDF)/config/ekf.yaml" command="load"/>
+  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization" clear_params="true" output="screen"/>
+
+  <rosparam file="$(find Swarmy_Bot_URDF)/config/amcl_params.yaml" command="load"/>
+  <node pkg="amcl" type="amcl" name="amcl" output="screen"/>
+
+  <rosparam file="$(find Swarmy_Bot_URDF)/config/costmap_common_params.yaml" command="load" ns="global_costmap"/>
+  <rosparam file="$(find Swarmy_Bot_URDF)/config/costmap_common_params.yaml" command="load" ns="local_costmap"/>
+  <rosparam file="$(find Swarmy_Bot_URDF)/config/global_costmap_params.yaml" command="load"/>
+  <rosparam file="$(find Swarmy_Bot_URDF)/config/local_costmap_params.yaml" command="load"/>
+  <rosparam file="$(find Swarmy_Bot_URDF)/config/base_local_planner_params.yaml" command="load"/>
+
+  <node pkg="move_base" type="move_base" name="move_base" output="screen">
+    <param name="base_global_planner" value="navfn/NavfnROS"/>
+    <param name="base_local_planner" value="base_local_planner/TrajectoryPlannerROS"/>
+    <param name="controller_frequency" value="10.0"/>
+    <param name="planner_frequency" value="1.0"/>
+    <param name="recovery_behavior_enabled" value="true"/>
+    <param name="clearing_rotation_allowed" value="true"/>
+  </node>
+</launch>

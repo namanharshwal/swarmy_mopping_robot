@@ -119,7 +119,7 @@ def publish_joint_states(dleft_counts, dright_counts, dt, stamp):
     drad_l = (dleft_counts  / ENC_COUNTS_PER_REV) * 2.0 * math.pi
     drad_r = (dright_counts / ENC_COUNTS_PER_REV) * 2.0 * math.pi
     wheel_angle_left  += drad_l
-    wheel_angle_right += drad_r
+    wheel_angle_right += -drad_r
     vel_l = drad_l / dt if dt > 1e-6 else 0.0
     vel_r = drad_r / dt if dt > 1e-6 else 0.0
     js = JointState()
