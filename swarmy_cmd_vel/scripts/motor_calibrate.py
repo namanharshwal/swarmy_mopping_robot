@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+# ============================================================================
+# Project Handlers: Naman Sain & Souvik Mallik
+# 
+# Maintainers:
+# - Naman Sain   : ROS FULL STACK and Development with Software to Hardware Communication
+# - Souvik Mallik: Embedded Maintainer
+# ============================================================================
+
 # -*- coding: utf-8 -*-
 """
 motor_calibrate.py — Automatic motor balance calibration using AMCL

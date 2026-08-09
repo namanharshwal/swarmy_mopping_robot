@@ -1,3 +1,13 @@
+/**
+ * ============================================================================
+ * Project Handlers: Naman Sain & Souvik Mallik
+ * 
+ * Maintainers:
+ * - Naman Sain   : ROS FULL STACK and Development with Software to Hardware Communication
+ * - Souvik Mallik: Embedded Maintainer
+ * ============================================================================
+ */
+
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Activity, Battery, Cpu, Wifi, WifiOff, Gamepad2, Navigation, AlertTriangle, Settings, FileText, LayoutDashboard, Power, Pause, RefreshCw, Save, Terminal, FolderTree, Network, Info, Play, MapPin, Database, Map, HardDrive, Thermometer, Clock, Globe, Zap, Shield, Eye, Radio, Bot, Rocket, XCircle, CheckCircle, MessageSquare, Send, Brain, MonitorUp, Server, RotateCw, FileCode, Maximize2, Palette, Compass, Mic, Volume2, VolumeX } from 'lucide-react';

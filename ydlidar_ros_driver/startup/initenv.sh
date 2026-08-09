@@ -1,4 +1,12 @@
 #!/bin/bash
+# ============================================================================
+# Project Handlers: Naman Sain & Souvik Mallik
+# 
+# Maintainers:
+# - Naman Sain   : ROS FULL STACK and Development with Software to Hardware Communication
+# - Souvik Mallik: Embedded Maintainer
+# ============================================================================
+
 echo  'KERNEL=="ttyUSB*", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", MODE:="0666", GROUP:="dialout",  SYMLINK+="ydlidar"' >/etc/udev/rules.d/ydlidar.rules
 
 echo  'KERNEL=="ttyACM*", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5740", MODE:="0666", GROUP:="dialout",  SYMLINK+="ydlidar"' >/etc/udev/rules.d/ydlidar-V2.rules

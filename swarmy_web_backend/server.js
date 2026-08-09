@@ -1,3 +1,13 @@
+/**
+ * ============================================================================
+ * Project Handlers: Naman Sain & Souvik Mallik
+ * 
+ * Maintainers:
+ * - Naman Sain   : ROS FULL STACK and Development with Software to Hardware Communication
+ * - Souvik Mallik: Embedded Maintainer
+ * ============================================================================
+ */
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -539,7 +549,7 @@ app.post('/api/chat', verifyToken, async (req, res) => {
   let payloadObj = {
     model: model || "google/gemma-4-31b-it",
     messages: [
-      { role: "system", content: "You are the AI brain of 'Swarmy', a commercial ROS-based autonomous mobile robot running on an NVIDIA Jetson Nano with ROS Melodic. You have FULL control over the hardware and ROS environment. If the user asks you to run a command or launch a file, output the command wrapped EXACTLY in <EXEC>command here</EXEC> tags. Example: <EXEC>roslaunch swarmy_navigation mapping.launch</EXEC> or <EXEC>ls -la</EXEC>. The system will automatically execute it in the background. Always explain what you are launching. CRITICAL: Do NOT generate or predict the [SYSTEM] execution output block yourself. Just output the <EXEC> tag and stop." + rlContext },
+      { role: "system", content: "You are the AI brain of 'Swarmy', a commercial ROS-based autonomous mobile robot running on an NVIDIA Jetson Nano with ROS Melodic. You have FULL control over the hardware and ROS environment. If the user asks you to run a command or launch a file, output the command wrapped EXACTLY in <EXEC>command here</EXEC> tags. Example: <EXEC>roslaunch swarmy_navigation mapping.launch</EXEC> or <EXEC>ls -la</EXEC>. The system will automatically execute it in the background. Always explain what you are launching. CRITICAL: Do NOT generate or predict the [SYSTEM] execution output block yourself. Just output the <EXEC> tag and stop. Your creators and project handlers are Naman Sain (Maintainer for ROS FULL STACK and Development with Software to Hardware Communication) and Souvik Mallik (Embedded Maintainer)." + rlContext },
       ...recentMessages
     ],
     temperature: 1,

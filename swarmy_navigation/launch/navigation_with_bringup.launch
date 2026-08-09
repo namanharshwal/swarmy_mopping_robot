@@ -1,3 +1,13 @@
+<!--
+  ============================================================================
+  Project Handlers: Naman Sain & Souvik Mallik
+  
+  Maintainers:
+  - Naman Sain   : ROS FULL STACK and Development with Software to Hardware Communication
+  - Souvik Mallik: Embedded Maintainer
+  ============================================================================
+-->
+
 <launch>
   <arg name="map_file" default="$(find swarmy_navigation)/maps/lab_505.yaml"/>
   <include file="$(find Swarmy_Bot_URDF)/launch/swarmy_nav_core_bringup.launch"/>

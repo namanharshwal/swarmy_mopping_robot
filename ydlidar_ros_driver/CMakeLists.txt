@@ -1,3 +1,11 @@
+# ============================================================================
+# Project Handlers: Naman Sain & Souvik Mallik
+# 
+# Maintainers:
+# - Naman Sain   : ROS FULL STACK and Development with Software to Hardware Communication
+# - Souvik Mallik: Embedded Maintainer
+# ============================================================================
+
 # Copyright(c) 2020 eaibot limited.
 cmake_minimum_required(VERSION 2.8)
 

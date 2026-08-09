@@ -1,3 +1,11 @@
+# ============================================================================
+# Project Handlers: Naman Sain & Souvik Mallik
+# 
+# Maintainers:
+# - Naman Sain   : ROS FULL STACK and Development with Software to Hardware Communication
+# - Souvik Mallik: Embedded Maintainer
+# ============================================================================
+
 use_map_topic: true
 odom_model_type: diff
 transform_tolerance: 0.5

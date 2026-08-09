@@ -1,4 +1,14 @@
 <?xml version="1.0"?>
+<!--
+  ============================================================================
+  Project Handlers: Naman Sain & Souvik Mallik
+  
+  Maintainers:
+  - Naman Sain   : ROS FULL STACK and Development with Software to Hardware Communication
+  - Souvik Mallik: Embedded Maintainer
+  ============================================================================
+-->
+
 <package format="2">
   <name>ydlidar_ros_driver</name>
   <version>1.0.1</version>

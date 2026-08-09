@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+# ============================================================================
+# Project Handlers: Naman Sain & Souvik Mallik
+# 
+# Maintainers:
+# - Naman Sain   : ROS FULL STACK and Development with Software to Hardware Communication
+# - Souvik Mallik: Embedded Maintainer
+# ============================================================================
+
 # -*- coding: utf-8 -*-
 # swarmy_base_node.py - Swarmy Bot ROS base node
 # Industrial-grade rewrite with velocity smoothing & honest fake odometry

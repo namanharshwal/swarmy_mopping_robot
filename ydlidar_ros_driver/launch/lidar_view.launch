@@ -1,3 +1,13 @@
+<!--
+  ============================================================================
+  Project Handlers: Naman Sain & Souvik Mallik
+  
+  Maintainers:
+  - Naman Sain   : ROS FULL STACK and Development with Software to Hardware Communication
+  - Souvik Mallik: Embedded Maintainer
+  ============================================================================
+-->
+
 <launch>
   <include file="$(find ydlidar_ros_driver)/launch/lidar.launch" />
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find ydlidar_ros_driver)/launch/lidar.rviz" />

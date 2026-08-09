@@ -1,3 +1,13 @@
+/**
+ * ============================================================================
+ * Project Handlers: Naman Sain & Souvik Mallik
+ * 
+ * Maintainers:
+ * - Naman Sain   : ROS FULL STACK and Development with Software to Hardware Communication
+ * - Souvik Mallik: Embedded Maintainer
+ * ============================================================================
+ */
+
 import React, { useState } from 'react';
 import { Lock, User, ArrowRight } from 'lucide-react';
 import './index.css';

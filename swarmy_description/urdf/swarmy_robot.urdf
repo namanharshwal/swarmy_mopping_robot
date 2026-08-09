@@ -1,4 +1,14 @@
 <?xml version="1.0"?>
+<!--
+  ============================================================================
+  Project Handlers: Naman Sain & Souvik Mallik
+  
+  Maintainers:
+  - Naman Sain   : ROS FULL STACK and Development with Software to Hardware Communication
+  - Souvik Mallik: Embedded Maintainer
+  ============================================================================
+-->
+
 <robot name="swarmy_robot">
 
   <material name="black"><color rgba="0.1 0.1 0.1 1.0"/></material>

@@ -1,3 +1,11 @@
+# ============================================================================
+# Project Handlers: Naman Sain & Souvik Mallik
+# 
+# Maintainers:
+# - Naman Sain   : ROS FULL STACK and Development with Software to Hardware Communication
+# - Souvik Mallik: Embedded Maintainer
+# ============================================================================
+
 # gmapping.yaml - Swarmy Bot SLAM parameters - FIXED FINAL
 # Place at: ~/swarmy_ws/src/Swarmy_Bot_URDF/config/gmapping.yaml
 #
