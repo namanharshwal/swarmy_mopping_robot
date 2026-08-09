@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfected Photorealistic Neon Robot</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: transparent; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Reflector.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/FXAAShader.js"></script>
+
+    <script>
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000000, 0.012);
+        
+        const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(7.5, 7.5, 9.5);
+        camera.lookAt(0, 1.8, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance", alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        const maxPixelRatio = Math.min(window.devicePixelRatio * 2, 4); 
+        renderer.setPixelRatio(maxPixelRatio);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.35;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
+        renderer.setClearColor(0x000000, 0);
+        document.body.appendChild(renderer.domElement);
+
+        const renderScene = new THREE.RenderPass(scene, camera);
+        const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0.25; 
+        bloomPass.strength = 1.6;
+        bloomPass.radius = 0.9;
+
+        const fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
+        fxaaPass.material.uniforms['resolution'].value.x = 1 / (window.innerWidth * maxPixelRatio);
+        fxaaPass.material.uniforms['resolution'].value.y = 1 / (window.innerHeight * maxPixelRatio);
+
+        const composer = new THREE.EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+        composer.addPass(fxaaPass);
+
+        function createBrushedMetalBumpMap() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#888888';
+            ctx.fillRect(0, 0, 512, 512);
+            for(let i = 0; i < 4000; i++) {
+                ctx.fillStyle = Math.random() > 0.5 ? '#ffffff' : '#000000';
+                ctx.globalAlpha = 0.04;
+                ctx.fillRect(0, Math.random() * 512, 512, Math.random() * 2 + 0.5);
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            return tex;
+        }
+
+        function createTreadBumpMap() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#444444';
+            ctx.fillRect(0, 0, 256, 256);
+            ctx.fillStyle = '#ffffff';
+            for(let i = 0; i < 256; i += 12) {
+                ctx.fillRect(0, i, 256, 6);
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(1, 16);
+            return tex;
+        }
+
+        const metalBump = createBrushedMetalBumpMap();
+        const treadBump = createTreadBumpMap();
+
+        const darkMetal = new THREE.MeshPhysicalMaterial({ 
+            color: 0x111115, 
+            roughness: 0.35, 
+            metalness: 0.85,
+            clearcoat: 0.3,
+            clearcoatRoughness: 0.15,
+            bumpMap: metalBump,
+            bumpScale: 0.002
+        });
+        
+        const darkRubber = new THREE.MeshStandardMaterial({ 
+            color: 0x070707, 
+            roughness: 0.95, 
+            bumpMap: treadBump,
+            bumpScale: 0.05
+        });
+
+        // Parse parent's theme color
+        const urlParams = new URLSearchParams(window.location.search);
+        const themeName = urlParams.get('theme') || 'cyber';
+        
+        const themeColors = {
+            'apple-dark': '#ffffff',
+            'monolith': '#ffffff',
+            'apple-light': '#333333',
+            'midnight': '#4a80ff',
+            'obsidian': '#ff3300',
+            'emerald': '#00ff73',
+            'amethyst': '#a100ff',
+            'gold': '#ffd700',
+            'arctic': '#00ffff',
+            'sunset': '#ff4500',
+            'ocean': '#0077ff',
+            'blossom': '#ff69b4',
+            'autumn': '#ff8c00',
+            'royal': '#8a2be2',
+            'mint': '#98ff98',
+            'cyber': '#00ffff',
+            'tokyo': '#ff007f',
+            'lunar': '#c0c0c0',
+            'blood': '#ff0000',
+            'aurora': '#00fa9a'
+        };
+        
+        const themeColor = themeColors[themeName] || '#00ffff';
+        const neonColor = new THREE.Color(themeColor);
+        
+        const neonGlowMat = new THREE.MeshBasicMaterial({ color: neonColor }); 
+        const neonLineMat = new THREE.LineBasicMaterial({ color: neonColor, linewidth: 3, transparent: true, opacity: 0.9 });
+
+        const robot = new THREE.Group();
+
+        function createRoundedNeonPart(w, h, d, radius, yPos) {
+            const group = new THREE.Group();
+            const geo = new THREE.RoundedBoxGeometry(w, h, d, 6, radius);
+            const mesh = new THREE.Mesh(geo, darkMetal);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            group.add(mesh);
+
+            const edgeGeo = new THREE.EdgesGeometry(geo, 35);
+            const edges = new THREE.LineSegments(edgeGeo, neonLineMat);
+            group.add(edges);
+
+            group.position.y = yPos;
+            return group;
+        }
+
+        const base = createRoundedNeonPart(4.4, 1.4, 4.0, 0.15, 1.2);
+        robot.add(base);
+
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 1.2, 64), darkMetal);
+        neck.position.y = 2.4;
+        neck.castShadow = true;
+        robot.add(neck);
+
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(1.22, 0.04, 32, 64), neonGlowMat);
+        ring.rotation.x = Math.PI / 2;
+        ring.position.y = 2.4;
+        robot.add(ring);
+
+        function createBracket(x, z, rotationY) {
+            const bracketGrp = new THREE.Group();
+            const armGeo = new THREE.BoxGeometry(0.2, 1.2, 0.4);
+            const arm = new THREE.Mesh(armGeo, darkMetal);
+            arm.rotation.z = Math.PI / 6;
+            arm.castShadow = true;
+            bracketGrp.add(arm);
+            bracketGrp.position.set(x, 2.4, z);
+            bracketGrp.rotation.y = rotationY;
+            return bracketGrp;
+        }
+        robot.add(createBracket(1.6, 1.5, 0));
+        robot.add(createBracket(-1.6, 1.5, 0));
+        robot.add(createBracket(1.6, -1.5, 0));
+        robot.add(createBracket(-1.6, -1.5, 0));
+
+        const midPlate = createRoundedNeonPart(4.8, 0.15, 4.4, 0.05, 3.1);
+        robot.add(midPlate);
+        
+        function addScrew(x, z) {
+            const screw = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.2, 32), darkMetal);
+            screw.position.set(x, 3.2, z);
+            screw.castShadow = true;
+            robot.add(screw);
+        }
+        addScrew(1.5, 1.8); addScrew(-1.5, 1.8); addScrew(1.5, -1.8); addScrew(-1.5, -1.8);
+
+        const head = createRoundedNeonPart(2.6, 1.3, 3.8, 0.1, 3.9);
+        robot.add(head);
+
+        const faceScreen = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.6), new THREE.MeshBasicMaterial({ color: 0x00020a }));
+        faceScreen.position.set(0, 3.9, 1.91);
+        robot.add(faceScreen);
+
+        const eyeGeo = new THREE.PlaneGeometry(0.08, 0.08);
+        const eyeL = new THREE.Mesh(eyeGeo, neonGlowMat); eyeL.position.set(-0.25, 3.95, 1.92);
+        const eyeR = new THREE.Mesh(eyeGeo, neonGlowMat); eyeR.position.set(0.25, 3.95, 1.92);
+        robot.add(eyeL); robot.add(eyeR);
+        
+        const smileGeo = new THREE.TorusGeometry(0.15, 0.02, 16, 32, Math.PI);
+        const smile = new THREE.Mesh(smileGeo, neonGlowMat);
+        smile.position.set(0, 3.85, 1.92);
+        smile.rotation.z = Math.PI;
+        robot.add(smile);
+
+        const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 6.8, 32), darkMetal);
+        axle.rotation.z = Math.PI / 2;
+        axle.position.y = 1.5;
+        axle.castShadow = true;
+        robot.add(axle);
+
+        function createWheel(xPos) {
+            const wGroup = new THREE.Group();
+            const wGeo = new THREE.CylinderGeometry(1.5, 1.5, 1.3, 64);
+            const wheel = new THREE.Mesh(wGeo, darkRubber);
+            wheel.rotation.z = Math.PI / 2;
+            wheel.castShadow = true;
+            wGroup.add(wheel);
+            const rimGeo = new THREE.TorusGeometry(1.45, 0.04, 32, 64);
+            const rim = new THREE.Mesh(rimGeo, neonGlowMat);
+            rim.rotation.y = Math.PI / 2;
+            rim.position.x = xPos > 0 ? 0.65 : -0.65;
+            wGroup.add(rim);
+            const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 1.32, 32), darkMetal);
+            hub.rotation.z = Math.PI / 2;
+            wGroup.add(hub);
+            wGroup.position.set(xPos, 1.5, 0);
+            return wGroup;
+        }
+
+        robot.add(createWheel(3.4));
+        robot.add(createWheel(-3.4));
+        scene.add(robot);
+
+        // Move to left
+        robot.position.x = -2.5;
+
+        const mirrorGeo = new THREE.PlaneGeometry(100, 100);
+        const mirror = new THREE.Reflector(mirrorGeo, {
+            clipBias: 0.003,
+            textureWidth: window.innerWidth * maxPixelRatio,
+            textureHeight: window.innerHeight * maxPixelRatio,
+            color: 0x1a1a1a 
+        });
+        mirror.rotation.x = -Math.PI / 2;
+        mirror.position.y = -0.01;
+        scene.add(mirror);
+        
+        const shadowPlane = new THREE.Mesh(mirrorGeo, new THREE.ShadowMaterial({ opacity: 0.4 }));
+        shadowPlane.rotation.x = -Math.PI / 2;
+        shadowPlane.receiveShadow = true;
+        scene.add(shadowPlane);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.8);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048; 
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.bias = -0.001; 
+        scene.add(dirLight);
+
+        const blueLight = new THREE.PointLight(neonColor, 1.2, 15);
+        blueLight.position.set(-2.5, 4, 4);
+        scene.add(blueLight);
+
+        let mouseX = 0;
+        let mouseY = 0;
+
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'mousemove') {
+                mouseX = e.data.x;
+                mouseY = e.data.y;
+            }
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            robot.rotation.y += 0.002; 
+            robot.position.y = Math.sin(Date.now() * 0.001) * 0.1;
+            camera.position.x += (mouseX * 2 + 7.5 - camera.position.x) * 0.05;
+            camera.position.y += (-mouseY * 2 + 7.5 - camera.position.y) * 0.05;
+            camera.lookAt(-2.5, 1.8, 0); 
+            composer.render(); 
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+            fxaaPass.material.uniforms['resolution'].value.x = 1 / (window.innerWidth * maxPixelRatio);
+            fxaaPass.material.uniforms['resolution'].value.y = 1 / (window.innerHeight * maxPixelRatio);
+        });
+    </script>
+</body>
+</html>

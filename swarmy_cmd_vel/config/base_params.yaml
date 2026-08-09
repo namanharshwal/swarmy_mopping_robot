@@ -1,0 +1,5 @@
+swarmy:
+  left_multiplier: 1.0
+  right_multiplier: 1.0
+  fake_odom_linear_multiplier: 1.0
+  fake_odom_angular_multiplier: 1.0

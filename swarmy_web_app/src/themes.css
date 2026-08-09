@@ -1,0 +1,286 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;500;700&family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Poppins:wght@300;400;500;600&family=Cinzel:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;600&family=Raleway:wght@300;400;500;600&family=Quicksand:wght@300;400;500;600&family=Josefin+Sans:wght@300;400;500;600&family=Cormorant+Garamond:wght@400;500;600&family=Nunito:wght@300;400;500;600&display=swap');
+
+/* =========================================
+   20 ULTRA-PREMIUM TEXT STYLED THEMES
+========================================= */
+
+:root {
+  --transition-speed: 0.6s;
+  
+  /* Shared Premium Foundation */
+  --font-main: 'Inter', sans-serif;
+  --font-mono: 'Outfit', sans-serif;
+  --theme-radius: 20px;
+  --theme-btn-clip: none;
+  --theme-shadow-glow: 0 10px 30px rgba(0,0,0,0.5);
+  --theme-blur: blur(30px) saturate(150%);
+  --cursor-glow-color: rgba(255, 255, 255, 0.15);
+
+  /* Advanced Text Effects */
+  --theme-text-gradient: none;
+  --theme-text-fill: var(--text-main);
+  --theme-text-glow: none;
+  --theme-heading-weight: 600;
+  --theme-letter-spacing: normal;
+  --theme-text-transform: none;
+}
+
+body, .panel, .sidebar, .top-bar, .btn-launch, .btn-tech, .chat-bubble, .auth-box, p, span, button, input {
+  transition: background var(--transition-speed) ease, 
+              color var(--transition-speed) ease, 
+              border-color var(--transition-speed) ease,
+              box-shadow var(--transition-speed) ease,
+              background-image var(--transition-speed) ease,
+              border-radius var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1),
+              backdrop-filter var(--transition-speed) ease,
+              clip-path var(--transition-speed) ease,
+              font-family var(--transition-speed) ease;
+}
+
+h1, h2, h3, .brand-text {
+  transition: all var(--transition-speed) ease;
+  background: var(--theme-text-gradient, var(--text-main));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: var(--theme-text-fill);
+  text-shadow: var(--theme-text-glow);
+  font-weight: var(--theme-heading-weight);
+  letter-spacing: var(--theme-letter-spacing);
+  text-transform: var(--theme-text-transform);
+}
+
+/* 1. Apple Dark (Untouched, Clean) */
+html[data-theme="apple-dark"], html[data-theme="default"] {
+  --bg-dark: #000000; --panel-bg: rgba(30, 30, 35, 0.5);
+  --hexa-cyan: #ffffff; --hexa-purple: #888888;
+  --text-main: #f5f5f7; --text-muted: #a1a1a6;
+  --theme-bg: radial-gradient(circle at top left, #2a2a35 0%, #000000 100%);
+  --cursor-glow-color: rgba(255, 255, 255, 0.1);
+  --font-main: 'Inter', sans-serif;
+  --theme-text-fill: #f5f5f7;
+}
+
+/* 2. Apple Light (Clean, Pristine) */
+html[data-theme="apple-light"] {
+  --bg-dark: #f5f5f7; --panel-bg: rgba(255, 255, 255, 0.6);
+  --hexa-cyan: #0066cc; --hexa-purple: #ff3b30;
+  --text-main: #1d1d1f; --text-muted: #86868b;
+  --theme-shadow-glow: 0 10px 40px rgba(0,0,0,0.1);
+  --theme-bg: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  --cursor-glow-color: rgba(0, 102, 204, 0.15);
+  --font-main: 'Inter', sans-serif;
+  --theme-text-fill: #1d1d1f;
+}
+
+/* 3. Midnight Glass (Sleek Modern) */
+html[data-theme="midnight"] {
+  --bg-dark: #070b19; --panel-bg: rgba(15, 25, 45, 0.5);
+  --hexa-cyan: #00f3ff; --hexa-purple: #5bc0be;
+  --text-main: #ffffff; --text-muted: #88a0b5;
+  --theme-bg: radial-gradient(circle at top right, #111d3a 0%, #070b19 100%);
+  --font-main: 'Montserrat', sans-serif;
+  --theme-text-gradient: linear-gradient(90deg, #ffffff, #00f3ff);
+  --theme-text-fill: transparent;
+  --theme-letter-spacing: 1px;
+}
+
+/* 4. Obsidian Edge (Aggressive Tech) */
+html[data-theme="obsidian"] {
+  --bg-dark: #050505; --panel-bg: rgba(20, 20, 20, 0.7);
+  --hexa-cyan: #ff2a2a; --hexa-purple: #ff6b6b;
+  --text-main: #ffffff; --text-muted: #777777;
+  --theme-bg: radial-gradient(circle at bottom right, #1a0505 0%, #050505 100%);
+  --font-main: 'Space Grotesk', sans-serif;
+  --theme-text-fill: #ffffff;
+  --theme-text-glow: 0 0 10px rgba(255, 42, 42, 0.8);
+  --theme-text-transform: uppercase;
+}
+
+/* 5. Emerald Frost (Soft Glow) */
+html[data-theme="emerald"] {
+  --bg-dark: #030a06; --panel-bg: rgba(10, 30, 20, 0.5);
+  --hexa-cyan: #00ffa3; --hexa-purple: #00cc82;
+  --text-main: #e6fff5; --text-muted: #779988;
+  --theme-bg: radial-gradient(circle at center, #0a2016 0%, #030a06 100%);
+  --font-main: 'Nunito', sans-serif;
+  --theme-text-gradient: linear-gradient(180deg, #ffffff, #00ffa3);
+  --theme-text-fill: transparent;
+  --theme-heading-weight: 700;
+}
+
+/* 6. Amethyst Crystal (Elegant Jewel) */
+html[data-theme="amethyst"] {
+  --bg-dark: #090312; --panel-bg: rgba(30, 15, 50, 0.5);
+  --hexa-cyan: #d088ff; --hexa-purple: #a855f7;
+  --text-main: #faefff; --text-muted: #a088b3;
+  --theme-bg: linear-gradient(135deg, #18082e 0%, #090312 100%);
+  --font-main: 'Poppins', sans-serif;
+  --theme-text-gradient: linear-gradient(45deg, #d088ff, #ffffff);
+  --theme-text-fill: transparent;
+  --theme-letter-spacing: 0.5px;
+}
+
+/* 7. Liquid Gold (Pure Luxury) */
+html[data-theme="gold"] {
+  --bg-dark: #0a0805; --panel-bg: rgba(40, 30, 20, 0.5);
+  --hexa-cyan: #e5b567; --hexa-purple: #c49a45;
+  --text-main: #fffdf5; --text-muted: #9e8d72;
+  --theme-bg: radial-gradient(circle at top, #261c10 0%, #0a0805 100%);
+  --font-main: 'Cinzel', serif;
+  --theme-text-gradient: linear-gradient(45deg, #e5b567, #fffdf5, #c49a45);
+  --theme-text-fill: transparent;
+  --theme-text-glow: 0 0 20px rgba(229, 181, 103, 0.3);
+  --theme-letter-spacing: 2px;
+}
+
+/* 8. Arctic Pearl (Crisp, Icy) */
+html[data-theme="arctic"] {
+  --bg-dark: #e8f0f8; --panel-bg: rgba(255, 255, 255, 0.6);
+  --hexa-cyan: #0088ff; --hexa-purple: #0055ff;
+  --text-main: #102a43; --text-muted: #627d98;
+  --theme-shadow-glow: 0 10px 40px rgba(0,136,255,0.1);
+  --theme-bg: linear-gradient(180deg, #f0f5fa 0%, #d9e2ec 100%);
+  --font-main: 'Raleway', sans-serif;
+  --theme-text-fill: #102a43;
+  --theme-letter-spacing: 3px;
+  --theme-text-transform: uppercase;
+}
+
+/* 9. Sunset Aura (Warm Gradient Text) */
+html[data-theme="sunset"] {
+  --bg-dark: #120508; --panel-bg: rgba(45, 15, 25, 0.5);
+  --hexa-cyan: #ff5e62; --hexa-purple: #ff9966;
+  --text-main: #ffeeef; --text-muted: #b58d92;
+  --theme-bg: linear-gradient(45deg, #2a0815 0%, #120508 100%);
+  --font-main: 'Quicksand', sans-serif;
+  --theme-text-gradient: linear-gradient(90deg, #ff9966, #ff5e62);
+  --theme-text-fill: transparent;
+  --theme-heading-weight: 700;
+}
+
+/* 10. Ocean Deep (Bold Modern) */
+html[data-theme="ocean"] {
+  --bg-dark: #00121a; --panel-bg: rgba(0, 35, 50, 0.5);
+  --hexa-cyan: #00e5ff; --hexa-purple: #0088cc;
+  --text-main: #e0faff; --text-muted: #6699aa;
+  --theme-bg: radial-gradient(circle at bottom, #003344 0%, #00121a 100%);
+  --font-main: 'Outfit', sans-serif;
+  --theme-text-gradient: linear-gradient(180deg, #e0faff, #00e5ff);
+  --theme-text-fill: transparent;
+}
+
+/* 11. Cherry Blossom (Delicate Serif) */
+html[data-theme="blossom"] {
+  --bg-dark: #141012; --panel-bg: rgba(45, 35, 40, 0.5);
+  --hexa-cyan: #ffa6c9; --hexa-purple: #ff77a8;
+  --text-main: #fff0f5; --text-muted: #998890;
+  --theme-bg: radial-gradient(circle at top right, #2d1a24 0%, #141012 100%);
+  --font-main: 'Cormorant Garamond', serif;
+  --theme-text-fill: #ffa6c9;
+  --theme-letter-spacing: 1px;
+}
+
+/* 12. Monolithic Grey (Raw Industrial) */
+html[data-theme="monolith"] {
+  --bg-dark: #111111; --panel-bg: rgba(35, 35, 35, 0.6);
+  --hexa-cyan: #aaaaaa; --hexa-purple: #666666;
+  --text-main: #ffffff; --text-muted: #888888;
+  --theme-bg: radial-gradient(circle at center, #222222 0%, #111111 100%);
+  --font-main: 'Inter', sans-serif;
+  --theme-text-fill: #ffffff;
+  --theme-letter-spacing: -0.5px;
+  --theme-text-transform: lowercase;
+}
+
+/* 13. Autumn Ember (Classic Literature) */
+html[data-theme="autumn"] {
+  --bg-dark: #120a05; --panel-bg: rgba(45, 25, 15, 0.5);
+  --hexa-cyan: #ff7f3f; --hexa-purple: #cc5500;
+  --text-main: #ffede0; --text-muted: #aa8870;
+  --theme-bg: linear-gradient(180deg, #2a140a 0%, #120a05 100%);
+  --font-main: 'Playfair Display', serif;
+  --theme-text-fill: #ff7f3f;
+}
+
+/* 14. Velvet Royal (Regal Cinematic) */
+html[data-theme="royal"] {
+  --bg-dark: #0a0a1a; --panel-bg: rgba(25, 25, 55, 0.5);
+  --hexa-cyan: #99aaff; --hexa-purple: #5566ee;
+  --text-main: #f0f5ff; --text-muted: #8088b3;
+  --theme-bg: radial-gradient(circle at bottom left, #1a1a3a 0%, #0a0a1a 100%);
+  --font-main: 'Cinzel', serif;
+  --theme-text-glow: 0 0 15px rgba(153, 170, 255, 0.5);
+  --theme-text-fill: #f0f5ff;
+}
+
+/* 15. Glacial Mint (Soft & Airy) */
+html[data-theme="mint"] {
+  --bg-dark: #f0f7f4; --panel-bg: rgba(255, 255, 255, 0.7);
+  --hexa-cyan: #10b981; --hexa-purple: #059669;
+  --text-main: #064e3b; --text-muted: #6b7280;
+  --theme-bg: linear-gradient(135deg, #ffffff 0%, #e0f2fe 100%);
+  --font-main: 'Quicksand', sans-serif;
+  --theme-text-fill: #064e3b;
+  --theme-heading-weight: 500;
+  --theme-letter-spacing: 0.5px;
+}
+
+/* 16. Cyber Glass (Vibrant Glitch) */
+html[data-theme="cyber"] {
+  --bg-dark: #030310; --panel-bg: rgba(15, 15, 45, 0.5);
+  --hexa-cyan: #fcee0a; --hexa-purple: #ff003c;
+  --text-main: #ffffff; --text-muted: #8899aa;
+  --theme-bg: radial-gradient(circle at center, #0a0a20 0%, #030310 100%);
+  --font-main: 'Space Grotesk', sans-serif;
+  --theme-text-gradient: linear-gradient(45deg, #fcee0a, #ff003c);
+  --theme-text-fill: transparent;
+  --theme-text-glow: 2px 2px 0px rgba(255,0,60,0.5);
+}
+
+/* 17. Neon Tokyo (Extreme Neon Glow) */
+html[data-theme="tokyo"] {
+  --bg-dark: #080312; --panel-bg: rgba(25, 10, 45, 0.5);
+  --hexa-cyan: #ff00ff; --hexa-purple: #00ffff;
+  --text-main: #ffe6ff; --text-muted: #a388b5;
+  --theme-bg: linear-gradient(90deg, #110522 0%, #080312 100%);
+  --font-main: 'Montserrat', sans-serif;
+  --theme-text-gradient: linear-gradient(90deg, #00ffff, #ff00ff);
+  --theme-text-fill: transparent;
+  --theme-text-glow: 0 0 20px #ff00ff;
+  --theme-text-transform: uppercase;
+}
+
+/* 18. Lunar Surface (High Fashion) */
+html[data-theme="lunar"] {
+  --bg-dark: #151515; --panel-bg: rgba(45, 45, 45, 0.5);
+  --hexa-cyan: #d4d4d4; --hexa-purple: #8f8f8f;
+  --text-main: #fafafa; --text-muted: #999999;
+  --theme-bg: radial-gradient(circle at top left, #252525 0%, #151515 100%);
+  --font-main: 'Outfit', sans-serif;
+  --theme-text-fill: #ffffff;
+  --theme-letter-spacing: 4px;
+}
+
+/* 19. Blood Moon (Vampiric Elegance) */
+html[data-theme="blood"] {
+  --bg-dark: #0a0202; --panel-bg: rgba(35, 10, 10, 0.5);
+  --hexa-cyan: #ff3333; --hexa-purple: #cc0000;
+  --text-main: #ffe0e0; --text-muted: #996666;
+  --theme-bg: radial-gradient(circle at center, #1f0505 0%, #0a0202 100%);
+  --font-main: 'Josefin Sans', sans-serif;
+  --theme-text-gradient: linear-gradient(180deg, #ffe0e0, #ff3333);
+  --theme-text-fill: transparent;
+  --theme-text-glow: 0 5px 15px rgba(204, 0, 0, 0.6);
+}
+
+/* 20. Aurora Borealis (Ethereal Magic) */
+html[data-theme="aurora"] {
+  --bg-dark: #020812; --panel-bg: rgba(10, 30, 45, 0.5);
+  --hexa-cyan: #33ffcc; --hexa-purple: #9933ff;
+  --text-main: #e6ffff; --text-muted: #77aacc;
+  --theme-bg: radial-gradient(circle at top right, #05182b 0%, #020812 100%);
+  --font-main: 'Raleway', sans-serif;
+  --theme-text-gradient: linear-gradient(90deg, #33ffcc, #9933ff);
+  --theme-text-fill: transparent;
+  --theme-heading-weight: 300;
+}

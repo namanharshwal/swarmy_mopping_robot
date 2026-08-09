@@ -1,8 +1,8 @@
-frequency: 50
-sensor_timeout: 0.1
+frequency: 20
+sensor_timeout: 0.2
 two_d_mode: true
-transform_time_offset: 0.0
-transform_timeout: 0.1
+transform_time_offset: 0.05
+transform_timeout: 0.2
 publish_tf: true
 publish_acceleration: false
 
@@ -12,22 +12,23 @@ base_link_frame: base_footprint
 world_frame: odom
 
 odom0: /wheel/odom
-odom0_config: [true, true, false,
-false, false, true,
-true, false, false,
-false, false, true,
-false, false, false]
+odom0_config: [false, false, false,
+               false, false, false,
+               true,  false, false,
+               false, false, true,
+               false, false, false]
 odom0_differential: false
 odom0_relative: false
-odom0_queue_size: 20
+odom0_queue_size: 10
 
+# IMU fusion ENABLED — BNO055 provides reliable absolute orientation (Quaternions).
 imu0: /imu/data_raw
 imu0_config: [false, false, false,
-false, false, false,
-false, false, false,
-false, false, true,
-false, false, false]
+              false, false, true,
+              false, false, false,
+              false, false, false,
+              false, false, false]
 imu0_differential: false
 imu0_relative: true
-imu0_queue_size: 50
+imu0_queue_size: 10
 imu0_remove_gravitational_acceleration: false

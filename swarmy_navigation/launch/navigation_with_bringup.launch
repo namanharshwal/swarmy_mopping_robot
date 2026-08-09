@@ -4,4 +4,10 @@
   <include file="$(find swarmy_navigation)/launch/navigation.launch">
     <arg name="map_file" value="$(arg map_file)"/>
   </include>
+  
+  <!-- Interactive Waypoint Manager -->
+  <node pkg="swarmy_navigation" type="interactive_waypoint_manager.py" name="waypoint_manager" output="screen" />
+
+  <!-- OLED Emotion Display -->
+  <include file="$(find swarmy_display)/launch/emotion_display.launch"/>
 </launch>

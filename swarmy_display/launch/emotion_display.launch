@@ -5,4 +5,7 @@
     <param name="move_odom_threshold" value="0.01"/>
     <param name="move_joint_threshold" value="0.001"/>
   </node>
+  
+  <!-- The OLED rendering is now handled persistently by a systemd background service to ensure it always runs. -->
+  <!-- <node pkg="swarmy_display" type="swarmy_oled_emotions.py" name="swarmy_oled_emotions" output="screen" /> -->
 </launch>

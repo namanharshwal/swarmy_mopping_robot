@@ -16,5 +16,9 @@ include_directories(${catkin_INCLUDE_DIRS})
 catkin_install_python(PROGRAMS
   scripts/cmd_vel_listener.py
   scripts/swarmy_base_node.py
+  scripts/heading_correction_node.py
+  scripts/auto_calibrate.py
+  scripts/auto_tune_from_amcl.py
+  scripts/motor_calibrate.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

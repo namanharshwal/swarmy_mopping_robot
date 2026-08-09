@@ -1,0 +1,13 @@
+<launch>
+  <!-- Launch ROS Bridge Server for WebSocket communication -->
+  <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" > 
+     <arg name="port" value="9090"/>
+     <!-- rosauth can be enabled here if full token auth is implemented -->
+  </include>
+
+  <!-- Launch TF2 Web Republisher for 2D/3D map rendering in the browser -->
+  <node name="tf2_web_republisher" pkg="tf2_web_republisher" type="tf2_web_republisher" output="screen" />
+
+  <!-- System Health Publisher Node -->
+  <node pkg="swarmy_teleop" type="swarmy_system_health.py" name="swarmy_system_health" output="screen" />
+</launch>

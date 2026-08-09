@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-# swarmy_base_node.py - Swarmy Bot ROS base node - Fixed for ROS Melodic
-# Place at: ~/swarmy_ws/src/swarmy_cmd_vel/scripts/swarmy_base_node.py
-# chmod +x swarmy_base_node.py
+# -*- coding: utf-8 -*-
+# swarmy_base_node.py - Swarmy Bot ROS base node
+# Industrial-grade rewrite with velocity smoothing & honest fake odometry
 
 import rospy
 import serial
@@ -13,7 +13,7 @@ from geometry_msgs.msg import Twist, Quaternion
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import JointState, Imu
 
-# Hardware
+# -- Hardware ---------------------------------------------------------
 PORT = '/dev/ttyACM0'
 BAUD = 115200
 
@@ -23,18 +23,20 @@ WHEEL_SEPARATION   = 0.22172
 ENC_COUNTS_PER_REV = 26325.0
 
 # Motor PWM limits
-MAX_PWM        = 180
-MIN_PWM        = 45
-MAX_LINEAR_REF = 0.35
+MAX_PWM        = 255
+MIN_PWM        = 130          # minimum PWM to overcome static friction
+MAX_LINEAR_REF = 0.105        # physical top speed (m/s) at MAX_PWM
 
-# Runtime state
+# -- Velocity Smoothing -----------------------------------------------
+# Software acceleration limiter so motors never get instant speed jumps.
+ACCEL_LIMIT_LINEAR  = 0.5     # m/s per second (increased for faster max speed attainment)
+ACCEL_LIMIT_ANGULAR = 1.5     # rad/s per second
+
+# -- Runtime state -----------------------------------------------------
 ser           = None
 last_cmd_time = 0.0
-last_left     = None
-last_right    = None
-last_stamp    = None
 
-# Accumulated wheel angles
+# Accumulated wheel angles (for /joint_states visualization)
 wheel_angle_left  = 0.0
 wheel_angle_right = 0.0
 
@@ -43,12 +45,21 @@ odom_x   = 0.0
 odom_y   = 0.0
 odom_yaw = 0.0
 
+# Target velocity (from /cmd_vel callback)
+target_v = 0.0
+target_w = 0.0
+
+# Smoothed velocity (actually being sent to motors RIGHT NOW)
+smooth_v = 0.0
+smooth_w = 0.0
+
 joint_pub = None
 imu_pub   = None
 odom_pub  = None
 tf_br     = None
 
 
+# -- Helpers -----------------------------------------------------------
 def clamp(v, lo, hi):
     return max(lo, min(hi, v))
 
@@ -75,63 +86,148 @@ def open_serial():
     return False
 
 
-def twist_to_pwm(msg):
-    v  = msg.linear.x
-    w  = msg.angular.z
-    vl = v - w * WHEEL_SEPARATION / 2.0
-    vr = v + w * WHEEL_SEPARATION / 2.0
-    sc = MAX_PWM / MAX_LINEAR_REF
-    l  = int(vl * sc)
-    r  = int(vr * sc)
-    l  = clamp(l, -MAX_PWM, MAX_PWM)
-    r  = clamp(r, -MAX_PWM, MAX_PWM)
-    if l != 0 and abs(l) < MIN_PWM:
-        l = int(math.copysign(MIN_PWM, l))
-    if r != 0 and abs(r) < MIN_PWM:
-        r = int(math.copysign(MIN_PWM, r))
-    return l, r
+# -- Velocity to PWM (with deadband mapping) ---------------------------
+def vel_to_pwm(vel, multiplier):
+    """Map a single wheel velocity (m/s) to a PWM value."""
+    if abs(vel) < 0.005:
+        return 0
+    frac = clamp(abs(vel) / MAX_LINEAR_REF, 0.0, 1.0)
+    pwm = MIN_PWM + frac * (MAX_PWM - MIN_PWM)
+    pwm = int(math.copysign(pwm, vel))
+    pwm = int(pwm * multiplier)
+    return clamp(pwm, -MAX_PWM, MAX_PWM)
 
 
+# -- /cmd_vel callback -------------------------------------------------
 def cmd_cb(msg):
-    global last_cmd_time
-    if ser is None:
-        return
-    l, r = twist_to_pwm(msg)
-    try:
-        ser.write('{},{}\n'.format(l, r).encode())
-        last_cmd_time = time.time()
-    except Exception as e:
-        rospy.logerr_throttle(1.0, '[base_node] Serial write: %s', e)
+    global last_cmd_time, target_v, target_w
+    target_v = msg.linear.x
+    target_w = msg.angular.z
+    last_cmd_time = time.time()
 
 
-def watchdog(event):
-    if ser is None:
-        return
-    if time.time() - last_cmd_time > 0.3:
-        try:
-            ser.write(b'0,0\n')
-        except Exception:
-            pass
-
-
-def publish_joint_states(dleft_counts, dright_counts, dt, stamp):
+# -- Fixed-rate control loop (20 Hz) -----------------------------------
+def control_loop(event):
+    """
+    Runs at a fixed 20 Hz and:
+      1. Ramps smooth_v / smooth_w toward target_v / target_w
+      2. Converts the smoothed velocity to PWM and sends to ESP32
+      3. Publishes fake odometry based on the SMOOTHED velocity
+         (what the motors are actually doing), not the raw cmd_vel
+    """
+    global smooth_v, smooth_w, target_v, target_w
+    global odom_x, odom_y, odom_yaw
     global wheel_angle_left, wheel_angle_right
-    drad_l = (dleft_counts  / ENC_COUNTS_PER_REV) * 2.0 * math.pi
-    drad_r = (dright_counts / ENC_COUNTS_PER_REV) * 2.0 * math.pi
+
+    dt = 0.05  # 1/20 Hz
+
+    # -- Watchdog: zero target if no cmd_vel received recently ---------
+    if time.time() - last_cmd_time > 0.5:
+        target_v = 0.0
+        target_w = 0.0
+
+    # -- Software velocity ramp (acceleration limiter) -----------------
+    max_dv = ACCEL_LIMIT_LINEAR  * dt
+    max_dw = ACCEL_LIMIT_ANGULAR * dt
+
+    dv = target_v - smooth_v
+    if abs(dv) > max_dv:
+        dv = math.copysign(max_dv, dv)
+    smooth_v += dv
+
+    dw = target_w - smooth_w
+    if abs(dw) > max_dw:
+        dw = math.copysign(max_dw, dw)
+    smooth_w += dw
+
+    # -- Differential drive kinematics ---------------------------------
+    vl = smooth_v - smooth_w * WHEEL_SEPARATION / 2.0
+    vr = smooth_v + smooth_w * WHEEL_SEPARATION / 2.0
+
+    # -- Convert to PWM and send to ESP32 ------------------------------
+    left_mult  = rospy.get_param('/swarmy/left_multiplier',  0.85)
+    right_mult = rospy.get_param('/swarmy/right_multiplier', 1.0)
+
+    pwm_l = vel_to_pwm(vl, left_mult)
+    pwm_r = vel_to_pwm(vr, right_mult)
+
+    if ser is not None:
+        try:
+            ser.write('{},{}\n'.format(-pwm_r, -pwm_l).encode())
+        except Exception as e:
+            rospy.logerr_throttle(1.0, '[base_node] Serial write: %s', e)
+
+    # -- Fake odometry based on smoothed velocity ----------------------
+    odom_lin_mult = rospy.get_param('/swarmy/fake_odom_linear_multiplier',  1.0)
+    odom_ang_mult = rospy.get_param('/swarmy/fake_odom_angular_multiplier', 1.0)
+
+    odom_v = smooth_v * odom_lin_mult
+    odom_w = smooth_w * odom_ang_mult
+
+    ds   = odom_v * dt
+    dyaw = odom_w * dt
+
+    mid_yaw   = odom_yaw + dyaw / 2.0
+    odom_x   += ds * math.cos(mid_yaw)
+    odom_y   += ds * math.sin(mid_yaw)
+    odom_yaw  = norm_angle(odom_yaw + dyaw)
+
+    stamp = rospy.Time.now()
+    qz = math.sin(odom_yaw / 2.0)
+    qw = math.cos(odom_yaw / 2.0)
+
+    # -- Publish /wheel/odom -------------------------------------------
+    pose_cov = [
+        0.05, 0.0,  0.0,  0.0, 0.0, 0.0,
+        0.0,  0.05, 0.0,  0.0, 0.0, 0.0,
+        0.0,  0.0,  1e6,  0.0, 0.0, 0.0,
+        0.0,  0.0,  0.0,  1e6, 0.0, 0.0,
+        0.0,  0.0,  0.0,  0.0, 1e6, 0.0,
+        0.0,  0.0,  0.0,  0.0, 0.0, 0.1,
+    ]
+    twist_cov = [
+        0.05, 0.0,  0.0,  0.0, 0.0, 0.0,
+        0.0,  0.05, 0.0,  0.0, 0.0, 0.0,
+        0.0,  0.0,  1e6,  0.0, 0.0, 0.0,
+        0.0,  0.0,  0.0,  1e6, 0.0, 0.0,
+        0.0,  0.0,  0.0,  0.0, 1e6, 0.0,
+        0.0,  0.0,  0.0,  0.0, 0.0, 0.1,
+    ]
+
+    odom = Odometry()
+    odom.header.stamp          = stamp
+    odom.header.frame_id       = 'odom'
+    odom.child_frame_id        = 'base_footprint'
+    odom.pose.pose.position.x  = odom_x
+    odom.pose.pose.position.y  = odom_y
+    odom.pose.pose.position.z  = 0.0
+    odom.pose.pose.orientation = Quaternion(0.0, 0.0, qz, qw)
+    odom.pose.covariance       = pose_cov
+    odom.twist.twist.linear.x  = odom_v
+    odom.twist.twist.angular.z = odom_w
+    odom.twist.covariance      = twist_cov
+    odom_pub.publish(odom)
+
+    # -- Publish /joint_states for URDF visualization ------------------
+    dl_m = vl * dt
+    dr_m = vr * dt
+    drad_l = dl_m / WHEEL_RADIUS
+    drad_r = dr_m / WHEEL_RADIUS
     wheel_angle_left  += drad_l
     wheel_angle_right += -drad_r
-    vel_l = drad_l / dt if dt > 1e-6 else 0.0
-    vel_r = drad_r / dt if dt > 1e-6 else 0.0
+
     js = JointState()
-    js.header.stamp    = stamp
-    js.header.frame_id = ''
+    js.header.stamp = stamp
     js.name     = ['lw_joint', 'rw_joint', 'fc_joint', 'fcw_joint', 'rc_joint', 'rcw_joint']
     js.position = [wheel_angle_left, wheel_angle_right, 0.0, 0.0, 0.0, 0.0]
-    js.velocity = [vel_l, vel_r, 0.0, 0.0, 0.0, 0.0]
+    js.velocity = [drad_l / dt if dt > 1e-6 else 0.0,
+                   drad_r / dt if dt > 1e-6 else 0.0,
+                   0.0, 0.0, 0.0, 0.0]
     js.effort   = []
     joint_pub.publish(js)
 
 
+# -- IMU publisher (called from serial reader) -------------------------
 def publish_imu(data, stamp):
     imu = Imu()
     imu.header.stamp    = stamp
@@ -142,105 +238,55 @@ def publish_imu(data, stamp):
     imu.angular_velocity.x = math.radians(data.get('gx', 0.0))
     imu.angular_velocity.y = math.radians(data.get('gy', 0.0))
     imu.angular_velocity.z = math.radians(data.get('gz', 0.0))
+    
+    # Read Quaternions from BNO055
+    imu.orientation.w = data.get('qw', 1.0)
+    imu.orientation.x = data.get('qx', 0.0)
+    imu.orientation.y = data.get('qy', 0.0)
+    imu.orientation.z = data.get('qz', 0.0)
+
+    # Set valid orientation covariance
     imu.orientation_covariance = [
-        -1.0, 0.0, 0.0,
-         0.0, 0.0, 0.0,
-         0.0, 0.0, 0.0
+        0.01, 0.0, 0.0,
+         0.0, 0.01, 0.0,
+         0.0, 0.0, 0.01
     ]
     imu.angular_velocity_covariance = [
-        0.001, 0.0,   0.0,
-        0.0,   0.001, 0.0,
-        0.0,   0.0,   0.001
+        0.01, 0.0,  0.0,
+        0.0,  0.01, 0.0,
+        0.0,  0.0,  0.01
     ]
     imu.linear_acceleration_covariance = [
-        0.5, 0.0, 0.0,
-        0.0, 0.5, 0.0,
-        0.0, 0.0, 0.5
+        1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
+        0.0, 0.0, 1.0
     ]
     imu_pub.publish(imu)
 
 
-def publish_wheel_odom(dl, dr, dt, stamp):
-    global odom_x, odom_y, odom_yaw
-    ds      = (dr + dl) / 2.0
-    dyaw    = (dr - dl) / WHEEL_SEPARATION
-    mid_yaw = odom_yaw + dyaw / 2.0
-    odom_x   += ds * math.cos(mid_yaw)
-    odom_y   += ds * math.sin(mid_yaw)
-    odom_yaw  = norm_angle(odom_yaw + dyaw)
-    qz = math.sin(odom_yaw / 2.0)
-    qw = math.cos(odom_yaw / 2.0)
-    tf_br.sendTransform(
-        (odom_x, odom_y, 0.0),
-        (0.0, 0.0, qz, qw),
-        stamp,
-        'base_footprint',
-        'odom'
-    )
-    pose_cov = [
-        0.01, 0.0,  0.0,  0.0,  0.0,  0.0,
-        0.0,  0.01, 0.0,  0.0,  0.0,  0.0,
-        0.0,  0.0,  1e6,  0.0,  0.0,  0.0,
-        0.0,  0.0,  0.0,  1e6,  0.0,  0.0,
-        0.0,  0.0,  0.0,  0.0,  1e6,  0.0,
-        0.0,  0.0,  0.0,  0.0,  0.0,  0.05
-    ]
-    twist_cov = [
-        0.01, 0.0,  0.0,  0.0,  0.0,  0.0,
-        0.0,  0.01, 0.0,  0.0,  0.0,  0.0,
-        0.0,  0.0,  1e6,  0.0,  0.0,  0.0,
-        0.0,  0.0,  0.0,  1e6,  0.0,  0.0,
-        0.0,  0.0,  0.0,  0.0,  1e6,  0.0,
-        0.0,  0.0,  0.0,  0.0,  0.0,  0.05
-    ]
-    odom = Odometry()
-    odom.header.stamp          = stamp
-    odom.header.frame_id       = 'odom'
-    odom.child_frame_id        = 'base_footprint'
-    odom.pose.pose.position.x  = odom_x
-    odom.pose.pose.position.y  = odom_y
-    odom.pose.pose.position.z  = 0.0
-    odom.pose.pose.orientation = Quaternion(0.0, 0.0, qz, qw)
-    odom.pose.covariance       = pose_cov
-    if dt > 1e-6:
-        odom.twist.twist.linear.x  = ds   / dt
-        odom.twist.twist.angular.z = dyaw / dt
-    odom.twist.covariance = twist_cov
-    odom_pub.publish(odom)
+# -- ESP32 serial reader (just for IMU now) ----------------------------
+def read_serial():
+    """Non-blocking read of ESP32 JSON lines. Only used for IMU data."""
+    try:
+        if ser is not None and ser.in_waiting:
+            line = ser.readline().decode('utf-8', 'ignore').strip()
+            if line.startswith('{') and line.endswith('}'):
+                try:
+                    d = json.loads(line)
+                    if 'enc_l' in d:
+                        publish_imu(d, rospy.Time.now())
+                except Exception:
+                    pass
+    except Exception as e:
+        rospy.logerr_throttle(1.0, '[base_node] Serial read: %s', e)
 
 
-def process_telemetry(data):
-    global last_left, last_right, last_stamp
-    stamp = rospy.Time.now()
-    lc    = float(data.get('enc_l', 0.0))
-    rc    = float(data.get('enc_r', 0.0))
-    if last_left is not None and last_stamp is not None:
-        dt     = (stamp - last_stamp).to_sec()
-        dt     = max(1e-6, min(dt, 0.5))
-        dleft  = lc - last_left
-        dright = rc - last_right
-        publish_joint_states(dleft, dright, dt, stamp)
-        dl = (dleft  / ENC_COUNTS_PER_REV) * 2.0 * math.pi * WHEEL_RADIUS
-        dr = (dright / ENC_COUNTS_PER_REV) * 2.0 * math.pi * WHEEL_RADIUS
-        publish_wheel_odom(dl, dr, dt, stamp)
-    else:
-        publish_joint_states(0.0, 0.0, 0.02, stamp)
-        tf_br.sendTransform(
-            (0.0, 0.0, 0.0),
-            (0.0, 0.0, 0.0, 1.0),
-            stamp,
-            'base_footprint',
-            'odom'
-        )
-    publish_imu(data, stamp)
-    last_left  = lc
-    last_right = rc
-    last_stamp = stamp
-
-
+# -- Shutdown ----------------------------------------------------------
 def shutdown_hook():
     try:
         if ser:
+            ser.write(b'0,0\n')
+            time.sleep(0.1)
             ser.write(b'STOP\n')
             time.sleep(0.2)
             ser.close()
@@ -248,31 +294,29 @@ def shutdown_hook():
         pass
 
 
+# -- Main --------------------------------------------------------------
 if __name__ == '__main__':
     rospy.init_node('swarmy_base_node')
-    joint_pub = rospy.Publisher('/joint_states', JointState, queue_size=50)
-    imu_pub   = rospy.Publisher('/imu/data_raw', Imu,        queue_size=50)
-    odom_pub  = rospy.Publisher('/wheel/odom',   Odometry,   queue_size=50)
+
+    joint_pub = rospy.Publisher('/joint_states', JointState, queue_size=10)
+    imu_pub   = rospy.Publisher('/imu/data_raw', Imu,        queue_size=10)
+    odom_pub  = rospy.Publisher('/wheel/odom',   Odometry,   queue_size=10)
     tf_br     = tf.TransformBroadcaster()
+
     while not open_serial() and not rospy.is_shutdown():
         rospy.logwarn('[base_node] Retrying ESP32 on %s ...', PORT)
         time.sleep(2.0)
-    rospy.Subscriber('/cmd_vel', Twist, cmd_cb, queue_size=10)
-    rospy.Timer(rospy.Duration(0.1), watchdog)
+
+    rospy.Subscriber('/cmd_vel', Twist, cmd_cb, queue_size=1)
+
+    # The single fixed-rate control loop: drives motors + publishes odom
+    rospy.Timer(rospy.Duration(0.05), control_loop)   # 20 Hz
+
     rospy.on_shutdown(shutdown_hook)
-    rospy.loginfo('[base_node] Ready -- listening on /cmd_vel')
+    rospy.loginfo('[base_node] Ready -- smooth control loop at 20 Hz')
+
+    # Main thread just reads serial for IMU data
     rate = rospy.Rate(200)
     while not rospy.is_shutdown():
-        try:
-            if ser.in_waiting:
-                line = ser.readline().decode('utf-8', 'ignore').strip()
-                if line.startswith('{') and line.endswith('}'):
-                    try:
-                        d = json.loads(line)
-                        if 'enc_l' in d and 'enc_r' in d:
-                            process_telemetry(d)
-                    except Exception:
-                        pass
-        except Exception as e:
-            rospy.logerr_throttle(1.0, '[base_node] Serial read: %s', e)
+        read_serial()
         rate.sleep()

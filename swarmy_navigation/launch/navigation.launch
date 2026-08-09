@@ -3,8 +3,9 @@
 
   <node pkg="map_server" type="map_server" name="map_server" args="$(arg map_file)" output="screen"/>
 
-  <rosparam file="$(find swarmy_navigation)/config/amcl_params.yaml" command="load"/>
-  <node pkg="amcl" type="amcl" name="amcl" output="screen"/>
+  <node pkg="amcl" type="amcl" name="amcl" output="screen">
+    <rosparam file="$(find swarmy_navigation)/config/amcl_params.yaml" command="load"/>
+  </node>
 
   <node pkg="move_base" type="move_base" name="move_base" output="screen">
     <rosparam file="$(find swarmy_navigation)/config/move_base_params.yaml" command="load"/>
@@ -16,4 +17,8 @@
     <param name="base_global_planner" value="navfn/NavfnROS"/>
     <param name="base_local_planner" value="base_local_planner/TrajectoryPlannerROS"/>
   </node>
+
+  <!-- Bridge RViz 'Publish Point' tool to move_base_simple/goal for manual waypoints -->
+  <node pkg="swarmy_teleop" type="publish_point_to_goal.py" name="publish_point_to_goal" output="screen"/>
 </launch>
+

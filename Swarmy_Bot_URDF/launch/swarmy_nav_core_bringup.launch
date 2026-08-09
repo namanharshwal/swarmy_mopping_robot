@@ -1,6 +1,6 @@
 <launch>
   <arg name="rviz" default="true"/>
-  <arg name="teleop" default="false"/>
+  <arg name="teleop" default="true"/>
 
   <param name="robot_description" textfile="$(find Swarmy_Bot_URDF)/urdf/Swarmy_Bot_URDF.urdf"/>
 
@@ -18,6 +18,13 @@
         type="static_transform_publisher"
         name="base_to_imu"
         args="0 0 0.05 0 0 0 base_link imu_link 50"/>
+
+  <node pkg="tf"
+        type="static_transform_publisher"
+        name="base_to_laser"
+        args="0.10 0 0.12 0 0 0 base_link laser_frame 50"/>
+
+  <rosparam command="load" file="$(find swarmy_cmd_vel)/config/base_params.yaml"/>
 
   <node pkg="swarmy_cmd_vel"
         type="swarmy_base_node.py"
@@ -39,7 +46,7 @@
         type="teleop_twist_keyboard.py"
         name="teleop"
         output="screen"
-        launch-prefix="xterm -e"/>
+        launch-prefix="env DISPLAY=:99 xterm -geometry 80x30+1400+20 -title 'Web Teleoperation' -e"/>
 
   <node if="$(arg rviz)"
         pkg="rviz"
