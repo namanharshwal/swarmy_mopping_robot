@@ -1,0 +1,17 @@
+# Swarmy Bot Jetson Python Dependencies
+# Install via: pip3 install -r requirements.txt
+
+# Hardware & Sensors
+smbus2==0.6.1
+pyserial==3.5
+RPi.GPIO==0.7.1
+Jetson.GPIO==2.1.6
+
+# OLED Display
+luma.core==2.3.1
+luma.oled==3.8.1
+Pillow==9.5.0
+
+# Image / Math Processing
+numpy==1.19.5
+opencv-python==4.5.1.48
