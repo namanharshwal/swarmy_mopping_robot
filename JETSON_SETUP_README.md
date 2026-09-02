@@ -18,10 +18,10 @@ This guide explains how to completely rebuild the Swarmy Robot's software stack 
 
 ### Part B: Download JetPack 4.6.5 (L4T 32.7.5) Packages
 Download these four files on your Host PC into a new folder:
-1. `Jetson-210_Linux_R32.7.5_aarch64.tbz2` (Driver Package BSP)
-2. `Tegra_Linux_Sample-Root-Filesystem_R32.7.5_aarch64.tbz2` (Root Filesystem)
-3. `overlay_32.7.5_PCN211181.tbz2` (Tanna TechBiz Overlay)
-4. `tegra210-p3448-0002-p3449-0000-b00.dtb` (Tanna TechBiz Device Tree)
+1. [Jetson-210_Linux_R32.7.5_aarch64.tbz2](https://developer.nvidia.com/downloads/embedded/l4t/r32_release_v7.5/t210/jetson-210_linux_r32.7.5_aarch64.tbz2) (Driver Package BSP)
+2. [Tegra_Linux_Sample-Root-Filesystem_R32.7.5_aarch64.tbz2](https://developer.nvidia.com/downloads/embedded/l4t/r32_release_v7.5/t210/tegra_linux_sample-root-filesystem_r32.7.5_aarch64.tbz2) (Root Filesystem)
+3. [overlay_32.7.5_PCN211181.tbz2](https://developer.nvidia.com/downloads/embedded/L4T/r32_Release_v7.5/overlay_32.7.5_PCN211181.tbz2) (Tanna TechBiz Overlay)
+4. [tegra210-p3448-0002-p3449-0000-b00.dtb](https://drive.google.com/file/d/1BymFljX0eqFFICVi1XZX54Iny0zNtT0I/view?usp=drive_link) (Tanna TechBiz Device Tree)
 
 ### Part C: Unzip, Assemble, and Flash
 Open a terminal inside the folder where you downloaded the four files on your Host PC and run:
