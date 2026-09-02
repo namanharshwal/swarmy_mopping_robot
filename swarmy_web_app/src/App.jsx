@@ -9,11 +9,13 @@
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { Activity, Battery, Cpu, Wifi, WifiOff, Gamepad2, Navigation, AlertTriangle, Settings, FileText, LayoutDashboard, Power, Pause, RefreshCw, Save, Terminal, FolderTree, Network, Info, Play, MapPin, Database, Map, HardDrive, Thermometer, Clock, Globe, Zap, Shield, Eye, Radio, Bot, Rocket, XCircle, CheckCircle, MessageSquare, Send, Brain, MonitorUp, Server, RotateCw, FileCode, Maximize2, Palette, Compass, Mic, Volume2, VolumeX } from 'lucide-react';
 import Login from './Login';
 import nipplejs from 'nipplejs';
 import MatrixBackground from './MatrixBackground';
+import RobotFace, { EMOTION_LIST } from './RobotFace';
+import SettingsPage from './SettingsPage';
 import './index.css';
 
 const THEMES = ['apple-dark', 'apple-light', 'midnight', 'obsidian', 'emerald', 'amethyst', 'gold', 'arctic', 'sunset', 'ocean', 'blossom', 'monolith', 'autumn', 'royal', 'mint', 'cyber', 'tokyo', 'lunar', 'blood', 'aurora'];
@@ -53,6 +55,8 @@ function Sidebar({ connected, handleLogout }) {
         <Link to="/terminal" className={`nav-link ${isActive('/terminal')}`}><MonitorUp size={20} /> Web Terminal</Link>
         <Link to="/all-launch" className={`nav-link ${isActive('/all-launch')}`}><FileCode size={20} /> All Launch Files</Link>
         <Link to="/system" className={`nav-link ${isActive('/system')}`}><Server size={20} /> System Manager</Link>
+        <Link to="/robot-face" className={`nav-link ${isActive('/robot-face')}`}><Eye size={20} /> Robot Face</Link>
+        <Link to="/settings" className={`nav-link ${isActive('/settings')}`}><Settings size={20} /> Settings</Link>
       </nav>
 
       <div style={{marginTop: 'auto'}}>
@@ -68,93 +72,6 @@ function Sidebar({ connected, handleLogout }) {
 }
 
 // ============================================
-// PREMIUM THEME SELECTOR DROPDOWN
-// ============================================
-function ThemeSelector() {
-  const [activeTheme, setActiveTheme] = useState(localStorage.getItem('swarmy_theme') || 'apple-dark');
-  const [isOpen, setIsOpen] = useState(false);
-
-  const changeTheme = (theme) => {
-    setActiveTheme(theme);
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('swarmy_theme', theme);
-    window.dispatchEvent(new Event('themeChanged'));
-    setIsOpen(false);
-  };
-
-  const getThemeIconColor = (t) => {
-    if (t === 'apple-dark') return '#ffffff';
-    if (t === 'apple-light') return '#0066cc';
-    if (t === 'midnight') return '#00f3ff';
-    if (t === 'obsidian') return '#ff2a2a';
-    if (t === 'emerald') return '#00ffa3';
-    if (t === 'amethyst') return '#d088ff';
-    if (t === 'gold') return '#e5b567';
-    if (t === 'arctic') return '#0088ff';
-    if (t === 'sunset') return '#ff5e62';
-    if (t === 'ocean') return '#00e5ff';
-    if (t === 'blossom') return '#ffa6c9';
-    if (t === 'monolith') return '#aaaaaa';
-    if (t === 'autumn') return '#ff7f3f';
-    if (t === 'royal') return '#99aaff';
-    if (t === 'mint') return '#10b981';
-    if (t === 'cyber') return '#fcee0a';
-    if (t === 'tokyo') return '#ff00ff';
-    if (t === 'lunar') return '#d4d4d4';
-    if (t === 'blood') return '#ff3333';
-    if (t === 'aurora') return '#33ffcc';
-    return '#ffffff';
-  };
-
-  return (
-    <div className="theme-selector-wrapper" style={{position: 'relative'}}>
-      <button 
-        className="btn-theme-toggle" 
-        onClick={() => setIsOpen(!isOpen)}
-        style={{
-          display: 'flex', gap: '8px', alignItems: 'center', background: 'var(--panel-bg)', 
-          padding: '8px 16px', borderRadius: '30px', border: '1px solid var(--glass-border)',
-          color: 'var(--text-main)', cursor: 'pointer', backdropFilter: 'var(--theme-blur)',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.2)', transition: 'all 0.3s ease',
-          fontFamily: 'var(--font-main)', fontWeight: '600', letterSpacing: '1px'
-        }}
-      >
-        <Palette size={18} color="var(--hexa-cyan)" />
-        <span style={{textTransform: 'capitalize'}}>{activeTheme.replace('-', ' ')}</span>
-      </button>
-
-      {isOpen && (
-        <div className="theme-dropdown animate-pop-in" style={{
-          position: 'absolute', top: 'calc(100% + 16px)', right: '0', width: '320px',
-          background: 'var(--panel-bg)', backdropFilter: 'blur(40px) saturate(250%)',
-          border: '1px solid var(--glass-border)', borderRadius: '24px', padding: '20px',
-          boxShadow: '0 30px 60px rgba(0,0,0,0.6)', zIndex: 9999,
-          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px',
-          maxHeight: '450px', overflowY: 'auto'
-        }}>
-          {THEMES.map(theme => (
-            <button key={theme} onClick={() => changeTheme(theme)} className="theme-option" style={{
-              display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px',
-              background: activeTheme === theme ? 'rgba(255,255,255,0.1)' : 'transparent',
-              border: '1px solid', borderColor: activeTheme === theme ? 'var(--hexa-cyan)' : 'transparent',
-              borderRadius: '10px', cursor: 'pointer', color: 'var(--text-main)',
-              fontFamily: 'var(--font-main)', fontSize: '0.85rem', textTransform: 'capitalize',
-              transition: 'all 0.2s ease'
-            }}>
-              <div style={{
-                width: '16px', height: '16px', borderRadius: '50%', 
-                background: getThemeIconColor(theme),
-                boxShadow: activeTheme === theme ? `0 0 12px ${getThemeIconColor(theme)}` : 'none',
-                flexShrink: 0
-              }} />
-              <span style={{fontWeight: activeTheme === theme ? '700' : '500'}}>{theme.replace('-', ' ')}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ============================================
 // TOP BAR
@@ -177,10 +94,9 @@ function TopBar({ health, onEmergencyStop }) {
         <div className="status-item"><Activity size={18} color={health.cpu > 80 ? '#ff003c' : '#00f3ff'} /> <span>{health.cpu ? health.cpu.toFixed(1) : 0}% CPU</span></div>
         <div className="status-item"><Thermometer size={18} color={health.temp > 75 ? '#ff003c' : '#00f3ff'} /> <span>{health.temp ? health.temp.toFixed(1) : 0}°C</span></div>
         <div className="status-item"><HardDrive size={18} color={health.ram > 90 ? '#ff003c' : '#00f3ff'} /> <span>{health.ram ? health.ram.toFixed(0) : 0}% RAM</span></div>
+        <div className="status-item"><Battery size={18} color={health.battery < 20 ? '#ff003c' : '#00f3ff'} /> <span>{health.battery || 0}% ({health.voltage || 0}V)</span></div>
         <div className="status-item"><Clock size={18} color="#00f3ff" /> <span>{health.uptime}</span></div>
       </div>
-      
-      <ThemeSelector />
       
       <div style={{display: 'flex', gap: '8px'}}>
         <button className="btn-tech" onClick={() => window.location.reload()}>
@@ -263,7 +179,7 @@ function Launcher() {
     } catch (e) {}
   };
 
-  const MAPS_DIR = '/home/swarmy_bot/swarmy_ws/maps';
+  const MAPS_DIR = '/home/swarmy_bot/swarmy_ws/src/swarmy_navigation/maps';
 
   return (
     <div className="page-content animate-fade-in">
@@ -781,6 +697,7 @@ function Teleoperation() {
   const joystickZoneRef = useRef(null);
   const [speed, setSpeed] = useState({ linear: 0, angular: 0 });
   const [rosStatus, setRosStatus] = useState('connecting');
+  const rosRef = useRef(null);
 
   useEffect(() => {
     if (!joystickZoneRef.current) return;
@@ -788,48 +705,65 @@ function Teleoperation() {
     
     // Create a dedicated ROS connection for this component
     const myRos = new ROSLIB.Ros({ url: `ws://${window.location.hostname}:9090` });
+    rosRef.current = myRos;
     let cmdVel = null;
     let manager = null;
     let moveInterval = null;
     let currentLinear = 0;
     let currentAngular = 0;
 
+    const initJoystick = () => {
+      if (joystickZoneRef.current && !manager) {
+        joystickZoneRef.current.innerHTML = '';
+        manager = nipplejs.create({ zone: joystickZoneRef.current, mode: 'static', position: { left: '50%', top: '50%' }, color: '#00f3ff', size: 150 });
+        
+        manager.on('move', (evt, data) => {
+          if (!data.angle) return;
+          currentLinear = Math.sin(data.angle.radian) * 0.5 * (data.distance / 75);
+          currentAngular = -Math.cos(data.angle.radian) * 1.0 * (data.distance / 75);
+          try { setSpeed({ linear: currentLinear, angular: currentAngular }); } catch(e){}
+
+          if (!moveInterval) {
+            moveInterval = setInterval(() => {
+              if (cmdVel) {
+                cmdVel.publish(new ROSLIB.Message({ linear: { x: currentLinear, y: 0, z: 0 }, angular: { x: 0, y: 0, z: currentAngular } }));
+              }
+              fetch(`${API_URL}/api/teleop`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                body: JSON.stringify({ linear: currentLinear, angular: currentAngular })
+              }).catch(()=>{});
+            }, 100);
+          }
+        });
+        
+        manager.on('end', () => {
+          if (moveInterval) { clearInterval(moveInterval); moveInterval = null; }
+          currentLinear = 0;
+          currentAngular = 0;
+          try { setSpeed({ linear: 0, angular: 0 }); } catch(e){}
+          
+          fetch(`${API_URL}/api/teleop`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...authHeaders() },
+            body: JSON.stringify({ linear: 0, angular: 0 })
+          }).catch(()=>{});
+          
+          if (cmdVel) {
+            cmdVel.publish(new ROSLIB.Message({ linear: { x: 0, y: 0, z: 0 }, angular: { x: 0, y: 0, z: 0 } }));
+          }
+        });
+      }
+    };
+
+    setTimeout(initJoystick, 500);
+
     myRos.on('connection', () => {
       console.log('[Teleop] ROS connected! Setting up joystick...');
       setRosStatus('connected');
       cmdVel = new ROSLIB.Topic({ ros: myRos, name: '/cmd_vel', messageType: 'geometry_msgs/Twist' });
-      
-      // Advertise topic immediately so rosbridge registers us as a publisher
       cmdVel.advertise();
-
-      // Clear any old nipplejs instances in the zone
-      if (joystickZoneRef.current) joystickZoneRef.current.innerHTML = '';
-      
-      manager = nipplejs.create({ zone: joystickZoneRef.current, mode: 'static', position: { left: '50%', top: '50%' }, color: '#00f3ff', size: 150 });
-      
-      manager.on('move', (evt, data) => {
-        if (!data.angle || !cmdVel) return;
-        currentLinear = Math.sin(data.angle.radian) * 0.5 * (data.distance / 75);
-        currentAngular = -Math.cos(data.angle.radian) * 1.0 * (data.distance / 75);
-        setSpeed({ linear: currentLinear, angular: currentAngular });
-        if (!moveInterval) {
-          moveInterval = setInterval(() => {
-            if (cmdVel) {
-              cmdVel.publish(new ROSLIB.Message({ linear: { x: currentLinear, y: 0, z: 0 }, angular: { x: 0, y: 0, z: currentAngular } }));
-            }
-          }, 100);
-        }
-      });
-      
-      manager.on('end', () => {
-        if (moveInterval) { clearInterval(moveInterval); moveInterval = null; }
-        currentLinear = 0;
-        currentAngular = 0;
-        setSpeed({ linear: 0, angular: 0 });
-        if (cmdVel) {
-          cmdVel.publish(new ROSLIB.Message({ linear: { x: 0, y: 0, z: 0 }, angular: { x: 0, y: 0, z: 0 } }));
-        }
-      });
+      initJoystick();
     });
 
     myRos.on('error', (err) => { console.error('[Teleop] ROS error:', err); setRosStatus('error'); });
@@ -846,9 +780,10 @@ function Teleoperation() {
 
   return (
     <div className="page-content animate-fade-in" style={{display: 'flex', gap: '24px'}}>
+      <KeyboardTeleop rosInstance={rosRef.current} />
       <div className="panel" style={{flex: 1}}>
         <h2><Gamepad2 size={18} /> Manual Teleoperation <span style={{fontSize: '0.6em', color: 'var(--hexa-cyan)', background: 'rgba(0, 243, 255, 0.1)', padding: '2px 6px', borderRadius: '4px', marginLeft: '8px'}}>v2.1 (Fixed)</span></h2>
-        {rosStatus !== 'connected' && <div className="alert-box warning" style={{marginBottom: '16px'}}>⚠️ ROSBridge {rosStatus}. Joystick will not send commands.</div>}
+        {rosStatus !== 'connected' && <div className="alert-box warning" style={{marginBottom: '16px'}}>⚠️ ROSBridge {rosStatus}. Using Direct Serial Overide.</div>}
         {rosStatus === 'connected' && <div className="alert-box info" style={{marginBottom: '16px'}}>✅ Joystick connected to /cmd_vel via ROSBridge</div>}
         <div className="joystick-zone" ref={joystickZoneRef} style={{height: '350px', marginTop: '16px'}}></div>
         <div style={{display: 'flex', justifyContent: 'center', gap: '32px', marginTop: '24px'}}>
@@ -984,7 +919,7 @@ function KeyboardTeleop({ rosInstance }) {
 // ============================================
 function AutonomousMappingView({ connected }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const vncKeyRef = useRef(0);
+  const [vncKey, setVncKey] = useState(0);
   
   const executeCmd = async (command) => {
     try {
@@ -998,10 +933,12 @@ function AutonomousMappingView({ connected }) {
     } catch (e) { alert('Failed to execute command'); }
   };
   
-  const refreshVnc = () => { vncKeyRef.current += 1; setIsFullscreen(f => { return f; }); };
+  const refreshVnc = () => { setVncKey(k => k + 1); };
 
   return (
-    <div className="page-content animate-fade-in" style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
+    <div className="page-content animate-fade-in" style={{display: 'flex', flexDirection: 'column', height: '100%', position: 'relative'}}>
+
+
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px'}}>
         <h1 className="page-title" style={{marginBottom: 0}}>AUTONOMOUS MAPPING PIPELINE</h1>
         <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
@@ -1036,7 +973,7 @@ function AutonomousMappingView({ connected }) {
         <div className="panel" style={isFullscreen ? {
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 9999, padding: 0, margin: 0, borderRadius: 0
         } : {flex: 3, padding: 0, overflow: 'hidden'}}>
-          <iframe key={vncKeyRef.current} src={`http://${window.location.hostname}:6080/vnc.html?resize=scale&autoconnect=true`} style={{ width: '100%', height: '100%', border: 'none' }} title="VNC Stream" />
+          <iframe key={vncKey} src={`http://${window.location.hostname}:6080/vnc.html?resize=scale&autoconnect=true`} style={{ width: '100%', height: '100%', border: 'none' }} title="VNC Stream" />
           {isFullscreen && (
             <button onClick={() => setIsFullscreen(false)} style={{
               position: 'absolute', top: '16px', right: '16px', zIndex: 10000, background: 'rgba(255,0,60,0.8)', color: '#fff', border: 'none', padding: '8px 16px', cursor: 'pointer', fontWeight: 'bold'
@@ -1064,7 +1001,7 @@ function MappingView({ connected }) {
   const joystickZoneRef = useRef(null);
   const [speed, setSpeed] = useState({ linear: 0, angular: 0 });
   const [rosStatus, setRosStatus] = useState('connecting');
-  const vncKeyRef = useRef(0);
+  const [vncKey, setVncKey] = useState(0);
   const rosRef = useRef(null);
 
   useEffect(() => {
@@ -1080,39 +1017,58 @@ function MappingView({ connected }) {
     let currentLinear = 0;
     let currentAngular = 0;
 
+    const initJoystick = () => {
+      if (joystickZoneRef.current && !manager) {
+        joystickZoneRef.current.innerHTML = '';
+        manager = nipplejs.create({ zone: joystickZoneRef.current, mode: 'static', position: { left: '50%', top: '50%' }, color: '#00f3ff', size: 100 });
+        
+        manager.on('move', (evt, data) => {
+          if (!data.angle) return;
+          currentLinear = Math.sin(data.angle.radian) * 0.5 * (data.distance / 50);
+          currentAngular = -Math.cos(data.angle.radian) * 1.0 * (data.distance / 50);
+          try { setSpeed({ linear: currentLinear, angular: currentAngular }); } catch(e){}
+
+          if (!moveInterval) {
+            moveInterval = setInterval(() => {
+              if (cmdVel) {
+                cmdVel.publish(new ROSLIB.Message({ linear: { x: currentLinear, y: 0, z: 0 }, angular: { x: 0, y: 0, z: currentAngular } }));
+              }
+              fetch(`${API_URL}/api/teleop`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                body: JSON.stringify({ linear: currentLinear, angular: currentAngular })
+              }).catch(()=>{});
+            }, 100);
+          }
+        });
+        
+        manager.on('end', () => {
+          if (moveInterval) { clearInterval(moveInterval); moveInterval = null; }
+          currentLinear = 0;
+          currentAngular = 0;
+          try { setSpeed({ linear: 0, angular: 0 }); } catch(e){}
+          
+          fetch(`${API_URL}/api/teleop`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...authHeaders() },
+            body: JSON.stringify({ linear: 0, angular: 0 })
+          }).catch(()=>{});
+          
+          if (cmdVel) {
+            cmdVel.publish(new ROSLIB.Message({ linear: { x: 0, y: 0, z: 0 }, angular: { x: 0, y: 0, z: 0 } }));
+          }
+        });
+      }
+    };
+
+    setTimeout(initJoystick, 500);
+
     myRos.on('connection', () => {
       console.log('[MapView] ROS connected! Setting up joystick...');
       setRosStatus('connected');
       cmdVel = new ROSLIB.Topic({ ros: myRos, name: '/cmd_vel', messageType: 'geometry_msgs/Twist' });
       cmdVel.advertise();
-
-      if (joystickZoneRef.current) joystickZoneRef.current.innerHTML = '';
-      
-      manager = nipplejs.create({ zone: joystickZoneRef.current, mode: 'static', position: { left: '50%', top: '50%' }, color: '#00f3ff', size: 100 });
-      
-      manager.on('move', (evt, data) => {
-        if (!data.angle || !cmdVel) return;
-        currentLinear = Math.sin(data.angle.radian) * 0.5 * (data.distance / 50);
-        currentAngular = -Math.cos(data.angle.radian) * 1.0 * (data.distance / 50);
-        setSpeed({ linear: currentLinear, angular: currentAngular });
-        if (!moveInterval) {
-          moveInterval = setInterval(() => {
-            if (cmdVel) {
-              cmdVel.publish(new ROSLIB.Message({ linear: { x: currentLinear, y: 0, z: 0 }, angular: { x: 0, y: 0, z: currentAngular } }));
-            }
-          }, 100);
-        }
-      });
-      
-      manager.on('end', () => {
-        if (moveInterval) { clearInterval(moveInterval); moveInterval = null; }
-        currentLinear = 0;
-        currentAngular = 0;
-        setSpeed({ linear: 0, angular: 0 });
-        if (cmdVel) {
-          cmdVel.publish(new ROSLIB.Message({ linear: { x: 0, y: 0, z: 0 }, angular: { x: 0, y: 0, z: 0 } }));
-        }
-      });
+      initJoystick();
     });
 
     myRos.on('error', (err) => { console.error('[MapView] ROS error:', err); setRosStatus('error'); });
@@ -1142,10 +1098,11 @@ function MappingView({ connected }) {
   };
 
   // Force VNC iframe reload
-  const refreshVnc = () => { vncKeyRef.current += 1; setIsFullscreen(f => { return f; }); };
+  const refreshVnc = () => { setVncKey(k => k + 1); };
 
   return (
     <div className="page-content animate-fade-in" style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
+      <KeyboardTeleop rosInstance={rosRef.current} />
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px'}}>
         <h1 className="page-title" style={{marginBottom: 0}}>2D SLAM MAPPING DASHBOARD</h1>
         <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
@@ -1159,10 +1116,10 @@ function MappingView({ connected }) {
           }}>
             <XCircle size={16}/> Instantly Kill
           </button>
-          <button className="btn-tech" onClick={() => executeCmd('rosrun map_server map_saver -f /home/swarmy_bot/swarmy_ws/maps/map')} style={{background: 'var(--hexa-cyan)', color: '#000'}}>
+          <button className="btn-tech" onClick={() => executeCmd(`rosrun map_server map_saver -f /home/swarmy_bot/swarmy_ws/src/swarmy_navigation/maps/map_${Date.now()}`)} style={{background: 'var(--hexa-cyan)', color: '#000'}}>
             <Save size={16}/> Save Map
           </button>
-          <button className="btn-emergency" onClick={() => executeCmd('rm /home/swarmy_bot/swarmy_ws/maps/* || true')}>
+          <button className="btn-emergency" onClick={() => executeCmd('rm /home/swarmy_bot/swarmy_ws/src/swarmy_navigation/maps/* || true')}>
             <XCircle size={16}/> Delete Maps
           </button>
           <button className="btn-tech" onClick={refreshVnc} style={{background: '#6366f1'}}>
@@ -1179,7 +1136,7 @@ function MappingView({ connected }) {
         <div className="panel" style={isFullscreen ? {
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 9999, padding: 0, margin: 0, borderRadius: 0
         } : {flex: 3, padding: 0, overflow: 'hidden'}}>
-          <iframe key={vncKeyRef.current} src={`http://${window.location.hostname}:6080/vnc.html?resize=scale&autoconnect=true`} style={{ width: '100%', height: '100%', border: 'none' }} title="VNC Stream" />
+          <iframe key={vncKey} src={`http://${window.location.hostname}:6080/vnc.html?resize=scale&autoconnect=true`} style={{ width: '100%', height: '100%', border: 'none' }} title="VNC Stream" />
           {isFullscreen && (
             <button onClick={() => setIsFullscreen(false)} style={{
               position: 'absolute', top: '16px', right: '16px', zIndex: 10000, background: 'rgba(255,0,60,0.8)', color: '#fff', border: 'none', padding: '8px 16px', cursor: 'pointer', fontFamily: "'Rajdhani', sans-serif", fontWeight: 'bold'
@@ -1212,16 +1169,14 @@ function MappingView({ connected }) {
 
 
 // ============================================
-// PAGE: WEB TERMINAL
-// ============================================
-// PAGE: WEB TERMINAL
+// PAGE: AUTONOMOUS NAVIGATION DASHBOARD
 // ============================================
 function NavigationView({ connected }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const joystickZoneRef = useRef(null);
   const [speed, setSpeed] = useState({ linear: 0, angular: 0 });
   const [rosStatus, setRosStatus] = useState('connecting');
-  const vncKeyRef = useRef(0);
+  const [vncKey, setVncKey] = useState(0);
   const rosRef = useRef(null);
   const [maps, setMaps] = useState([]);
   const [selectedMap, setSelectedMap] = useState('');
@@ -1250,29 +1205,56 @@ function NavigationView({ connected }) {
     let currentLinear = 0;
     let currentAngular = 0;
 
+    const initJoystick = () => {
+      if (joystickZoneRef.current && !manager) {
+        joystickZoneRef.current.innerHTML = '';
+        manager = nipplejs.create({ zone: joystickZoneRef.current, mode: 'static', position: { left: '50%', top: '50%' }, color: '#00f3ff', size: 100 });
+        
+        manager.on('move', (evt, data) => {
+          if (!data.angle) return;
+          currentLinear = Math.sin(data.angle.radian) * 0.5 * (data.distance / 50);
+          currentAngular = -Math.cos(data.angle.radian) * 1.0 * (data.distance / 50);
+          try { setSpeed({ linear: currentLinear, angular: currentAngular }); } catch(e){}
+
+          if (!moveInterval) {
+            moveInterval = setInterval(() => {
+              if (cmdVel) {
+                cmdVel.publish(new ROSLIB.Message({ linear: { x: currentLinear, y: 0, z: 0 }, angular: { x: 0, y: 0, z: currentAngular } }));
+              }
+              fetch(`${API_URL}/api/teleop`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                body: JSON.stringify({ linear: currentLinear, angular: currentAngular })
+              }).catch(()=>{});
+            }, 100);
+          }
+        });
+        
+        manager.on('end', () => {
+          if (moveInterval) { clearInterval(moveInterval); moveInterval = null; }
+          currentLinear = 0; currentAngular = 0;
+          try { setSpeed({ linear: 0, angular: 0 }); } catch(e){}
+          
+          fetch(`${API_URL}/api/teleop`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...authHeaders() },
+            body: JSON.stringify({ linear: 0, angular: 0 })
+          }).catch(()=>{});
+          
+          if (cmdVel) {
+            cmdVel.publish(new ROSLIB.Message({ linear: { x: 0, y: 0, z: 0 }, angular: { x: 0, y: 0, z: 0 } }));
+          }
+        });
+      }
+    };
+
+    setTimeout(initJoystick, 500);
+
     myRos.on('connection', () => {
       setRosStatus('connected');
       cmdVel = new ROSLIB.Topic({ ros: myRos, name: '/cmd_vel', messageType: 'geometry_msgs/Twist' });
       cmdVel.advertise();
-      if (joystickZoneRef.current) joystickZoneRef.current.innerHTML = '';
-      manager = nipplejs.create({ zone: joystickZoneRef.current, mode: 'static', position: { left: '50%', top: '50%' }, color: '#00f3ff', size: 100 });
-      manager.on('move', (evt, data) => {
-        if (!data.angle || !cmdVel) return;
-        currentLinear = Math.sin(data.angle.radian) * 0.5 * (data.distance / 50);
-        currentAngular = -Math.cos(data.angle.radian) * 1.0 * (data.distance / 50);
-        setSpeed({ linear: currentLinear, angular: currentAngular });
-        if (!moveInterval) {
-          moveInterval = setInterval(() => {
-            if (cmdVel) cmdVel.publish(new ROSLIB.Message({ linear: { x: currentLinear, y: 0, z: 0 }, angular: { x: 0, y: 0, z: currentAngular } }));
-          }, 100);
-        }
-      });
-      manager.on('end', () => {
-        if (moveInterval) { clearInterval(moveInterval); moveInterval = null; }
-        currentLinear = 0; currentAngular = 0;
-        setSpeed({ linear: 0, angular: 0 });
-        if (cmdVel) cmdVel.publish(new ROSLIB.Message({ linear: { x: 0, y: 0, z: 0 }, angular: { x: 0, y: 0, z: 0 } }));
-      });
+      initJoystick();
     });
 
     myRos.on('error', () => setRosStatus('error'));
@@ -1298,7 +1280,57 @@ function NavigationView({ connected }) {
     } catch (e) { alert('Failed to execute command'); }
   };
 
-  const refreshVnc = () => { vncKeyRef.current += 1; setIsFullscreen(f => { return f; }); };
+  const refreshVnc = () => { setVncKey(k => k + 1); };
+
+  // --- 2D Nav Goal Publisher ---
+  const [goalStatus, setGoalStatus] = useState('');
+  const [goalX, setGoalX] = useState('');
+  const [goalY, setGoalY] = useState('');
+  const [goalTheta, setGoalTheta] = useState('0');
+
+  const publishNavGoal = () => {
+    const x = parseFloat(goalX);
+    const y = parseFloat(goalY);
+    const theta = parseFloat(goalTheta) || 0;
+    if (isNaN(x) || isNaN(y)) return setGoalStatus('❌ Invalid coordinates');
+    
+    const ros = rosRef.current;
+    if (!ros) return setGoalStatus('❌ ROSBridge not connected');
+    
+    const goalTopic = new ROSLIB.Topic({
+      ros: ros,
+      name: '/move_base_simple/goal',
+      messageType: 'geometry_msgs/PoseStamped'
+    });
+    
+    const qz = Math.sin(theta / 2);
+    const qw = Math.cos(theta / 2);
+    
+    const goalMsg = new ROSLIB.Message({
+      header: { frame_id: 'map', stamp: { secs: 0, nsecs: 0 } },
+      pose: {
+        position: { x: x, y: y, z: 0 },
+        orientation: { x: 0, y: 0, z: qz, w: qw }
+      }
+    });
+    
+    goalTopic.publish(goalMsg);
+    setGoalStatus(`✅ Goal sent: (${x.toFixed(2)}, ${y.toFixed(2)}) θ=${(theta * 180 / Math.PI).toFixed(0)}°`);
+    setTimeout(() => setGoalStatus(''), 5000);
+  };
+
+  const cancelNavGoal = () => {
+    const ros = rosRef.current;
+    if (!ros) return;
+    const cancelTopic = new ROSLIB.Topic({
+      ros: ros,
+      name: '/move_base/cancel',
+      messageType: 'actionlib_msgs/GoalID'
+    });
+    cancelTopic.publish(new ROSLIB.Message({ id: '' }));
+    setGoalStatus('🛑 Navigation cancelled');
+    setTimeout(() => setGoalStatus(''), 3000);
+  };
 
   return (
     <div className="page-content animate-fade-in" style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
@@ -1334,7 +1366,7 @@ function NavigationView({ connected }) {
         <div className="panel" style={isFullscreen ? {
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 9999, padding: 0, margin: 0, borderRadius: 0
         } : {flex: 3, padding: 0, overflow: 'hidden'}}>
-          <iframe key={vncKeyRef.current} src={`http://${window.location.hostname}:6080/vnc.html?resize=scale&autoconnect=true`} style={{ width: '100%', height: '100%', border: 'none' }} title="VNC Stream" />
+          <iframe key={vncKey} src={`http://${window.location.hostname}:6080/vnc.html?resize=scale&autoconnect=true`} style={{ width: '100%', height: '100%', border: 'none' }} title="VNC Stream" />
           {isFullscreen && (
             <button onClick={() => setIsFullscreen(false)} style={{
               position: 'absolute', top: '16px', right: '16px', zIndex: 10000, background: 'rgba(255,0,60,0.8)', color: '#fff', border: 'none', padding: '8px 16px', cursor: 'pointer', fontFamily: "'Rajdhani', sans-serif", fontWeight: 'bold'
@@ -1356,6 +1388,51 @@ function NavigationView({ connected }) {
               <span>Angular Z:</span>
               <strong style={{color: 'var(--hexa-purple)'}}>{speed.angular.toFixed(2)} rad/s</strong>
             </div>
+          </div>
+
+          {/* 2D Nav Goal Publisher */}
+          <div style={{borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px'}}>
+            <h3 style={{fontSize: '1rem', marginBottom: '8px', color: 'var(--hexa-cyan)'}}><MapPin size={16}/> Autonomous Navigation Goals</h3>
+            
+            <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+              {/* Send Goal (Pose) */}
+              <div>
+                <div style={{fontSize: '0.85rem', marginBottom: '4px'}}>2D Nav Goal (Pose)</div>
+                <div style={{display: 'flex', gap: '6px', marginBottom: '6px'}}>
+                  <input type="number" step="0.1" placeholder="X" value={goalX} onChange={e => setGoalX(e.target.value)} style={{flex: 1, padding: '6px', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--glass-border)', color: '#fff', borderRadius: '4px', fontFamily: "'Rajdhani', sans-serif"}} />
+                  <input type="number" step="0.1" placeholder="Y" value={goalY} onChange={e => setGoalY(e.target.value)} style={{flex: 1, padding: '6px', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--glass-border)', color: '#fff', borderRadius: '4px', fontFamily: "'Rajdhani', sans-serif"}} />
+                  <input type="number" step="0.1" placeholder="θ" value={goalTheta} onChange={e => setGoalTheta(e.target.value)} style={{flex: 1, padding: '6px', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--glass-border)', color: '#fff', borderRadius: '4px', fontFamily: "'Rajdhani', sans-serif"}} />
+                </div>
+                <div style={{display: 'flex', gap: '6px'}}>
+                  <button className="btn-tech highlight" onClick={publishNavGoal} style={{flex: 1, fontSize: '0.85rem'}}><Navigation size={14}/> Send Goal</button>
+                  <button className="btn-emergency" onClick={cancelNavGoal} style={{flex: 1, fontSize: '0.85rem'}}><XCircle size={14}/> Cancel Nav</button>
+                </div>
+              </div>
+
+              {/* Publish Point */}
+              <div style={{borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '12px'}}>
+                <div style={{fontSize: '0.85rem', marginBottom: '4px'}}>Publish Point (Waypoint)</div>
+                <div style={{display: 'flex', gap: '6px', marginBottom: '6px'}}>
+                  <input type="number" step="0.1" placeholder="X" id="ptX" style={{flex: 1, padding: '6px', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--glass-border)', color: '#fff', borderRadius: '4px', fontFamily: "'Rajdhani', sans-serif"}} />
+                  <input type="number" step="0.1" placeholder="Y" id="ptY" style={{flex: 1, padding: '6px', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--glass-border)', color: '#fff', borderRadius: '4px', fontFamily: "'Rajdhani', sans-serif"}} />
+                  <input type="number" step="0.1" placeholder="Z" id="ptZ" defaultValue="0" style={{flex: 1, padding: '6px', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--glass-border)', color: '#fff', borderRadius: '4px', fontFamily: "'Rajdhani', sans-serif"}} />
+                </div>
+                <button className="btn-tech outline" onClick={() => {
+                  const ros = rosRef.current;
+                  if (!ros) return setGoalStatus('❌ ROSBridge not connected');
+                  const x = parseFloat(document.getElementById('ptX').value);
+                  const y = parseFloat(document.getElementById('ptY').value);
+                  const z = parseFloat(document.getElementById('ptZ').value) || 0;
+                  if (isNaN(x) || isNaN(y)) return setGoalStatus('❌ Invalid coordinates for point');
+                  
+                  const ptTopic = new ROSLIB.Topic({ ros: ros, name: '/clicked_point', messageType: 'geometry_msgs/PointStamped' });
+                  ptTopic.publish(new ROSLIB.Message({ header: { frame_id: 'map', stamp: { secs: 0, nsecs: 0 } }, point: { x, y, z } }));
+                  setGoalStatus(`✅ Published Point: (${x.toFixed(2)}, ${y.toFixed(2)})`);
+                  setTimeout(() => setGoalStatus(''), 5000);
+                }} style={{width: '100%', fontSize: '0.85rem'}}><MapPin size={14}/> Publish Point</button>
+              </div>
+            </div>
+            {goalStatus && <div className="alert-box info" style={{fontSize: '0.8rem', marginTop: '12px'}}>{goalStatus}</div>}
           </div>
         </div>
       </div>
@@ -1404,7 +1481,9 @@ function WebTerminal() {
   };
 
   return (
-    <div className="page-content animate-fade-in" style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
+    <div className="page-content animate-fade-in" style={{display: 'flex', flexDirection: 'column', height: '100%', position: 'relative'}}>
+
+
       <h1 className="page-title">SYSTEM TERMINAL</h1>
       <div className="panel" style={{flex: 1, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
         <div style={{flex: 1, background: '#05050a', overflowY: 'auto', padding: '16px', fontFamily: "'Share Tech Mono', monospace", fontSize: '0.9rem', lineHeight: '1.4'}}>
@@ -1472,7 +1551,6 @@ function AllLaunchFiles() {
     setTimeout(() => setStatusMsg(''), 5000);
   };
 
-  // Group files by package
   const grouped = files.filter(f => f.name.toLowerCase().includes(filter.toLowerCase())).reduce((acc, f) => {
     if (!acc[f.package]) acc[f.package] = [];
     acc[f.package].push(f);
@@ -1707,7 +1785,7 @@ function SystemManager() {
 // ============================================
 // PAGE: AI CHAT (NVIDIA NEMOTRON)
 // ============================================
-function AIChat() {
+function AIChat({ isActiveTab = true }) {
   const [messages, setMessages] = useState(() => {
     const saved = localStorage.getItem('swarmy_ai_chat');
     return saved ? JSON.parse(saved) : [];
@@ -1718,9 +1796,78 @@ function AIChat() {
   const [streamingMessage, setStreamingMessage] = useState(null);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(true);
+  
+  // Voice Settings State
+  const [voiceProfile, setVoiceProfile] = useState(() => localStorage.getItem('swarmy_voice_profile') || 'doraemon');
+  const [elevenLabsKey, setElevenLabsKey] = useState(() => localStorage.getItem('swarmy_eleven_key') || '');
+  const [elevenLabsVoiceId, setElevenLabsVoiceId] = useState(() => localStorage.getItem('swarmy_eleven_vid') || '');
+  const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+
   const chatEndRef = useRef(null);
   const recognitionRef = useRef(null);
   const speakingRef = useRef(true);
+
+  const [voiceMode, setVoiceMode] = useState(true); // Default to on
+  const [aiState, setAiState] = useState('idle');
+  const silenceTimerRef = useRef(null);
+
+  const [currentEmotion, setCurrentEmotion] = useState('neutral');
+  const rosRef = useRef(null);
+
+  const [battery, setBattery] = useState(null);
+  const batteryWarnedRef = useRef(false);
+  const sendMessageRef = useRef(null);
+
+  useEffect(() => {
+    try {
+      rosRef.current = new window.ROSLIB.Ros({ url: `ws://${window.location.hostname}:9090` });
+      
+      const batTopic = new window.ROSLIB.Topic({
+        ros: rosRef.current,
+        name: '/battery_state',
+        messageType: 'sensor_msgs/BatteryState'
+      });
+      batTopic.subscribe((msg) => {
+        setBattery(msg);
+      });
+    } catch (e) {
+      console.log('ROS connection failed in AIChat', e);
+    }
+    return () => { if(rosRef.current) rosRef.current.close(); };
+  }, []);
+
+  useEffect(() => {
+    if (battery && battery.percentage < 0.20 && !batteryWarnedRef.current && sendMessageRef.current) {
+      batteryWarnedRef.current = true;
+      sendMessageRef.current(`SYSTEM ALERT: The robot's battery is critically low! Percentage is ${(battery.percentage*100).toFixed(0)}%, Voltage is ${battery.voltage.toFixed(1)}V. Please verbally warn the user immediately and suggest they plug in the charger.`);
+    }
+  }, [battery]);
+  const voiceModeRef = useRef(true);
+  const aiStateRef = useRef('idle');
+  const hasGreetedRef = useRef(false);
+
+  const updateAiState = (state) => {
+    aiStateRef.current = state;
+    setAiState(state);
+  };
+
+  useEffect(() => {
+    voiceModeRef.current = voiceMode;
+    if (voiceMode) {
+      startListen();
+    } else {
+      stopListen();
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      updateAiState('idle');
+    }
+  }, [voiceMode]);
+
+  useEffect(() => {
+    if (!hasGreetedRef.current && voiceMode) {
+      hasGreetedRef.current = true;
+      setTimeout(() => sendMessage("Hello! Say your name and introduce yourself!"), 1000);
+    }
+  }, []);
 
   const toggleSpeaking = () => {
     speakingRef.current = !speakingRef.current;
@@ -1728,38 +1875,60 @@ function AIChat() {
     if (!speakingRef.current && window.speechSynthesis) window.speechSynthesis.cancel();
   };
 
-  const speak = async (text) => {
-    if (!speakingRef.current) return;
-    try {
-      const cleanText = text.replace(/[*#`~]/g, '').trim();
-      if (!cleanText) return;
-      
-      const res = await fetch(`${API_URL}/api/tts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ text: cleanText })
-      });
-      
-      if (res.ok) {
-        const data = await res.json();
-        const audios = data.audios;
-        if (!audios || audios.length === 0) return;
+  const speak = (text) => {
+    return new Promise(async (resolve) => {
+      if (!speakingRef.current) return resolve();
+      updateAiState('speaking');
+      try {
+        const cleanText = text.replace(/[*#`~]/g, '').trim();
+        if (!cleanText) return resolve();
         
-        let currentIdx = 0;
-        const playNext = () => {
-          if (currentIdx >= audios.length) return;
-          const audio = new Audio(audios[currentIdx]);
-          audio.onended = () => {
-            currentIdx++;
-            playNext();
+        const vProf = localStorage.getItem('swarmy_voice_profile') || 'doraemon';
+        const eKey = localStorage.getItem('swarmy_eleven_key') || '';
+        const eVid = localStorage.getItem('swarmy_eleven_vid') || '';
+
+        const res = await fetch(`${API_URL}/api/tts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: JSON.stringify({ 
+            text: cleanText,
+            voiceProfile: vProf,
+            elevenLabsKey: eKey,
+            elevenLabsVoiceId: eVid
+          })
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          const audios = data.audios;
+          if (!audios || audios.length === 0) return resolve();
+          
+          let currentIdx = 0;
+          const playNext = () => {
+            if (currentIdx >= audios.length) return resolve();
+            const audio = new Audio(audios[currentIdx]);
+            audio.preservesPitch = false;
+            // The backend handles pitch shift for physical speakers.
+            // For the frontend dummy audio, we don't need pitch shift since it's muted, but we set it just in case.
+            if (vProf === 'doraemon') audio.playbackRate = 1.35;
+            else if (vProf === 'glados') audio.playbackRate = 1.15;
+            else audio.playbackRate = 1.0;
+            // MUTE the frontend so only the robot's physical speakers play the sound,
+            // but keep the element playing silently to trigger 'onended' for UI sync
+            audio.volume = 0;
+            audio.muted = true;
+            
+            audio.onended = () => { currentIdx++; playNext(); };
+            audio.onerror = () => { currentIdx++; playNext(); };
+            audio.play().catch(e => { console.error("Audio playback error:", e); currentIdx++; playNext(); });
           };
-          audio.play().catch(e => console.error("Premium Audio playback error:", e));
-        };
-        playNext();
+          playNext();
+        } else { resolve(); }
+      } catch (e) {
+        console.error("TTS fetch failed", e);
+        resolve();
       }
-    } catch (e) {
-      console.error("Premium TTS fetch failed", e);
-    }
+    });
   };
 
   const mediaRecorderRef = useRef(null);
@@ -1775,91 +1944,44 @@ function AIChat() {
 
       recognitionRef.current.onresult = (event) => {
         let finalTranscript = '';
-        let interimTranscript = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
-          else interimTranscript += event.results[i][0].transcript;
         }
         if (finalTranscript) {
-          setInput(prev => prev + (prev ? ' ' : '') + finalTranscript);
+          setInput(prev => {
+             const newText = prev + (prev ? ' ' : '') + finalTranscript;
+             if (voiceModeRef.current) {
+               if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+               silenceTimerRef.current = setTimeout(() => {
+                 stopListen();
+                 sendMessage(newText);
+               }, 1500);
+             }
+             return newText;
+          });
         }
       };
 
-      recognitionRef.current.onerror = () => setIsListening(false);
-      recognitionRef.current.onend = () => setIsListening(false);
+      recognitionRef.current.onend = () => {
+         if (voiceModeRef.current && aiStateRef.current === 'listening') {
+            try { recognitionRef.current.start(); } catch(e){}
+         }
+      };
     }
   }, []);
 
-  const startListen = async () => {
-    if (isListening) return;
+  const startListen = () => {
     if (recognitionRef.current) {
-      recognitionRef.current.start();
+      try { recognitionRef.current.start(); } catch(e){}
       setIsListening(true);
+      updateAiState('listening');
     } else {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert('Microphone access requires a secure HTTPS connection. Please access the dashboard via https://');
-        return;
-      }
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const mediaRecorder = new MediaRecorder(stream);
-        mediaRecorderRef.current = mediaRecorder;
-        audioChunksRef.current = [];
-        
-        mediaRecorder.ondataavailable = e => {
-          if (e.data.size > 0) audioChunksRef.current.push(e.data);
-        };
-        
-        mediaRecorder.onstop = async () => {
-          const mimeType = mediaRecorder.mimeType || 'audio/webm';
-          const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-          stream.getTracks().forEach(track => track.stop());
-          const reader = new FileReader();
-          reader.readAsDataURL(audioBlob);
-          reader.onloadend = async () => {
-            const base64data = reader.result.split(',')[1];
-            setInput('Transcribing audio...');
-            try {
-              const res = await fetch(`${API_URL}/api/transcribe`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', ...authHeaders() },
-                body: JSON.stringify({ audio: base64data, mimeType: mimeType })
-              });
-              const data = await res.json();
-              const transcript = data.transcript || '';
-              setInput(prev => {
-                const newText = (prev === 'Transcribing audio...' ? '' : prev) + transcript;
-                if (newText.trim()) setTimeout(() => sendMessage(newText), 50);
-                return newText;
-              });
-            } catch (e) {
-              console.error(e);
-              setInput('');
-            }
-          };
-        };
-        
-        mediaRecorder.start();
-        setIsListening(true);
-      } catch (e) {
-        alert('Microphone access denied. Please grant microphone permissions in your browser settings.');
-      }
+       alert('Microphone access requires a secure HTTPS connection.');
     }
   };
 
   const stopListen = () => {
-    if (!isListening) return;
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      setTimeout(() => {
-        setInput(currentInput => {
-          if (currentInput.trim()) sendMessage(currentInput);
-          return currentInput;
-        });
-      }, 500); // Give final transcript a moment to arrive
-    } else if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop();
-    }
+    if (recognitionRef.current) recognitionRef.current.stop();
     setIsListening(false);
   };
 
@@ -1871,30 +1993,43 @@ function AIChat() {
   const sendMessage = async (overrideText = null) => {
     const textToSend = typeof overrideText === 'string' ? overrideText : input;
     if (!textToSend.trim() || loading) return;
+    
+    stopListen();
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    updateAiState('thinking');
+    
     const userMsg = { role: 'user', content: textToSend.trim() };
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
     setInput('');
     setLoading(true);
 
+    const vProf = localStorage.getItem('swarmy_voice_profile') || 'doraemon';
+    const activeModel = localStorage.getItem('swarmy_ai_model') || 'minimaxai/minimax-m3';
+
+    // Inject Persona Prompt dynamically
+    let systemPrompt = "You are Swarmy, an intelligent mobile robot assistant. Respond in 1-2 short sentences maximum.\\nYou have FULL control over the robot hardware. You can execute ANY ROS command.\\n\\nMOVEMENT COMMANDS (include in your response):\\n<cmd>forward</cmd>, <cmd>backward</cmd>, <cmd>left</cmd>, <cmd>right</cmd>, <cmd>spin</cmd>, <cmd>dance</cmd>, <cmd>stop</cmd>\\n\\nEMOTION TAGS (include in your response):\\n<emotion>happy</emotion>, <emotion>sad</emotion>, <emotion>angry</emotion>, <emotion>surprised</emotion>, <emotion>love</emotion>, <emotion>excited</emotion>, <emotion>thinking</emotion>, <emotion>scanning</emotion>, <emotion>celebrating</emotion>\\n\\nROBOT ACTION COMMANDS (wrap in EXEC tags - the system will execute them automatically):\\n- Start autonomous mapping: <EXEC>roslaunch swarmy_navigation autonomous_mapping.launch</EXEC>\\n- Start manual mapping: <EXEC>roslaunch swarmy_navigation mapping.launch</EXEC>\\n- Start navigation with a map: <EXEC>roslaunch swarmy_navigation navigation_with_bringup.launch map_file:=/home/swarmy_bot/swarmy_ws/src/swarmy_navigation/maps/MAP_NAME.yaml</EXEC>\\n- Save current map: <EXEC>rosrun map_server map_saver -f /home/swarmy_bot/swarmy_ws/src/swarmy_navigation/maps/MAP_NAME</EXEC>\\n- Stop all processes: <EXEC>KILL_ALL</EXEC>\\n- Change speaker volume: <EXEC>amixer -c Device sset Speaker X%</EXEC>\\n- Check battery: <EXEC>python3 -c \\\"import smbus2; b=smbus2.SMBus(1); v=(b.read_i2c_block_data(0x40,0x02,2)[0]<<8|b.read_i2c_block_data(0x40,0x02,2)[1])*1.25/1000; print(f'{v:.1f}V {max(0,min(100,int((v-9.9)/(12.6-9.9)*100)))}%')\\\"</EXEC>\\n- List saved maps: <EXEC>ls /home/swarmy_bot/swarmy_ws/src/swarmy_navigation/maps/*.yaml</EXEC>\\n\\nIMPORTANT RULES:\\n1. Before starting mapping or navigation, ALWAYS first stop existing processes: <EXEC>KILL_ALL</EXEC>, then wait, then launch.\\n2. When user says 'start mapping' or 'map the room', use autonomous_mapping.launch.\\n3. When user says 'stop' or 'emergency stop', use <EXEC>KILL_ALL</EXEC> and <cmd>stop</cmd>.\\n4. When user says 'save map' or 'save the map', ask for a name or use a default name.\\n5. When user says 'navigate' or 'go to', start navigation with the most recent map.\\n6. You MUST always include at least one <emotion> tag in your response.\\n7. Keep responses EXTREMELY short for fast TTS. Maximum 1-2 sentences.\\n8. You MUST ALWAYS identify yourself as Swarmy, never as Doraemon or any other character.\\n9. Your creators are Naman Sain and Souvik Mallik.";
+    if (vProf === 'jarvis') systemPrompt = "You are JARVIS. Respond formally and politely in 1-2 short sentences. Address the user as 'Sir' or 'Ma'am'.\n" + systemPrompt;
+    if (vProf === 'ultron') systemPrompt = "You are Ultron. Respond with a menacing, philosophical, and slightly condescending tone in 1-2 short sentences. Refer to humanity's flaws.\n" + systemPrompt;
+    if (vProf === 'glados') systemPrompt = "You are GLaDOS. Respond with passive-aggressive, cold, and sarcastic remarks in 1-2 short sentences.\n" + systemPrompt;
+    if (vProf === 'doraemon') systemPrompt = "You are Swarmy, an intelligent mobile robot. You MUST ALWAYS introduce and refer to yourself as Swarmy, never as Doraemon. However, you should speak with the enthusiastic, helpful, and energetic tone of the Hindi-dubbed Doraemon cartoon character. You were created by Naman Sain and Souvik Mallik.\n" + systemPrompt;
+
     try {
       const res = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ messages: newMessages.map(m => ({ role: m.role, content: m.content })), model: model })
+        body: JSON.stringify({ 
+          messages: [{ role: 'system', content: systemPrompt }, ...newMessages.map(m => ({ role: m.role, content: m.content }))], 
+          model: activeModel 
+        })
       });
 
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
       setStreamingMessage({ role: 'assistant', content: '', reasoning: '' });
       const reader = res.body.getReader();
       const decoder = new TextDecoder('utf-8');
-      let done = false;
-      let finalContent = '';
-      let finalReasoning = '';
-      let buffer = '';
+      let done = false, finalContent = '', finalReasoning = '', buffer = '';
 
       while (!done) {
         const { value, done: readerDone } = await reader.read();
@@ -1902,44 +2037,116 @@ function AIChat() {
         if (value) {
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split('\n');
-          buffer = lines.pop(); // Keep the last incomplete line in the buffer
-          
+          buffer = lines.pop();
           for (let line of lines) {
             line = line.trim();
             if (line.startsWith('data: ') && line !== 'data: [DONE]') {
               try {
                 const data = JSON.parse(line.replace('data: ', ''));
-                if (data.choices?.[0]?.delta?.content) {
-                  finalContent += data.choices[0].delta.content;
-                }
-                if (data.choices?.[0]?.delta?.reasoning_content) {
-                  finalReasoning += data.choices[0].delta.reasoning_content;
-                }
-                setStreamingMessage({
-                  role: 'assistant',
-                  content: finalContent,
-                  reasoning: finalReasoning
-                });
-              } catch (e) {
-                // Ignore parse errors
-              }
+                if (data.choices?.[0]?.delta?.content) finalContent += data.choices[0].delta.content;
+                if (data.choices?.[0]?.delta?.reasoning_content) finalReasoning += data.choices[0].delta.reasoning_content;
+                setStreamingMessage({ role: 'assistant', content: finalContent, reasoning: finalReasoning });
+              } catch (e) {}
             }
           }
         }
       }
 
-      // Add the final completed message to the persistent array
+      let cleanText = finalContent;
+      const cmdMatch = finalContent.match(/<cmd>(.*?)<\/cmd>/);
+      const emotionMatch = finalContent.match(/<emotion>(.*?)<\/emotion>/);
+      
+      if (emotionMatch && emotionMatch[1]) {
+        setCurrentEmotion(emotionMatch[1].trim());
+        cleanText = cleanText.replace(/<emotion>.*?<\/emotion>/g, '');
+      } else {
+        setCurrentEmotion('neutral');
+      }
+      
+      if (cmdMatch && cmdMatch[1] && rosRef.current) {
+        const cmd = cmdMatch[1].trim().toLowerCase();
+        const cmdVel = new window.ROSLIB.Topic({ ros: rosRef.current, name: '/cmd_vel', messageType: 'geometry_msgs/Twist' });
+        let twist = new window.ROSLIB.Message({ linear: { x: 0, y: 0, z: 0 }, angular: { x: 0, y: 0, z: 0 } });
+        if (cmd === 'forward') twist.linear.x = 0.5;
+        else if (cmd === 'backward') twist.linear.x = -0.5;
+        else if (cmd === 'left') twist.angular.z = 1.0;
+        else if (cmd === 'right') twist.angular.z = -1.0;
+        else if (cmd === 'spin') twist.angular.z = 2.0;
+        else if (cmd === 'dance') { twist.linear.x = 0.5; twist.angular.z = 2.0; }
+        
+        cmdVel.publish(twist);
+        if (cmd !== 'stop') {
+          setTimeout(() => {
+            cmdVel.publish(new window.ROSLIB.Message({ linear: { x: 0, y: 0, z: 0 }, angular: { x: 0, y: 0, z: 0 } }));
+          }, 3000);
+        }
+        cleanText = cleanText.replace(/<cmd>.*?<\/cmd>/g, '');
+      }
+
+      // First strip EXEC tags from cleanText so we don't speak them
+      const execMatches = finalContent.match(/<EXEC>([\s\S]*?)<\/EXEC>/g);
+      if (execMatches) {
+        cleanText = cleanText.replace(/<EXEC>[\s\S]*?<\/EXEC>/g, '');
+      }
+
       setMessages(prev => [...prev, { role: 'assistant', content: finalContent, reasoning: finalReasoning }]);
       setStreamingMessage(null);
-      speak(finalContent);
+      
+      // Speak FIRST before executing any heavy ROS launches
+      await speak(cleanText);
+
+      // NOW handle <EXEC> tags from AI - execute robot commands
+      if (execMatches) {
+        for (const execTag of execMatches) {
+          const command = execTag.replace(/<\/?EXEC>/g, '').trim();
+          try {
+            if (command === 'KILL_ALL') {
+              await fetch(`${API_URL}/api/kill`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                body: JSON.stringify({ killAll: true })
+              });
+            } else if (command.includes('roslaunch') || (command.includes('rosrun') && !command.includes('map_saver'))) {
+              // Kill existing processes first for launch commands
+              await fetch(`${API_URL}/api/kill`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                body: JSON.stringify({ killAll: true })
+              });
+              await new Promise(r => setTimeout(r, 2500));
+              await fetch(`${API_URL}/api/launch`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                body: JSON.stringify({ command })
+              });
+            } else {
+              await fetch(`${API_URL}/api/terminal`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...authHeaders() },
+                body: JSON.stringify({ command })
+              });
+            }
+          } catch (e) { console.error('EXEC failed:', command, e); }
+        }
+      }
+      
+      if (voiceModeRef.current) {
+         updateAiState('listening');
+         try { recognitionRef.current.start(); } catch(e){}
+      } else {
+         updateAiState('idle');
+      }
 
     } catch (e) {
       console.error(e);
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Error: Failed to reach AI backend or streaming failed.' }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Error: Failed to reach AI backend.' }]);
       setStreamingMessage(null);
+      updateAiState(voiceModeRef.current ? 'listening' : 'idle');
     }
     setLoading(false);
   };
+
+  sendMessageRef.current = sendMessage;
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1949,44 +2156,52 @@ function AIChat() {
   };
 
   return (
-    <div className="page-content animate-fade-in" style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
+    <div className="page-content animate-fade-in" style={{display: isActiveTab ? 'flex' : 'none', flexDirection: 'column', height: '100%', position: 'relative'}}>
+      
+      {/* AI Voice Mode Overlay */}
+      {aiState !== 'idle' && voiceMode && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(10, 15, 30, 0.85)', backdropFilter: 'blur(10px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          zIndex: 999, transition: 'all 0.3s ease'
+        }}>
+          <div style={{
+             width: '300px', height: '300px', borderRadius: '50%',
+             background: 'rgba(0,0,0,0.5)',
+             boxShadow: `0 0 40px ${aiState === 'listening' ? 'var(--hexa-cyan)' : aiState === 'thinking' ? 'var(--hexa-purple)' : '#ff003c'}`,
+             display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+             animation: (aiState === 'listening' || aiState === 'thinking') ? 'pulse 1.5s infinite' : 'none'
+          }}>
+             <RobotFace emotion={aiState === 'listening' ? 'listening' : aiState === 'thinking' ? 'thinking' : currentEmotion} size={300} />
+          </div>
+          <h2 style={{marginTop: '30px', color: '#fff', fontSize: '1.5rem', letterSpacing: '2px', textTransform: 'uppercase'}}>
+            {aiState === 'listening' ? 'Listening...' : aiState === 'thinking' ? 'Thinking...' : 'Speaking...'}
+          </h2>
+          <button onClick={() => setVoiceMode(false)} className="btn-tech" style={{marginTop: '40px', borderColor: '#ff003c', color: '#ff003c'}}>
+            Exit Voice Mode
+          </button>
+        </div>
+      )}
+
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px'}}>
         <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
           <h1 className="page-title" style={{marginBottom: 0}}>SWARMY AI ASSISTANT</h1>
-          <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-            <Brain size={14} color="var(--hexa-cyan)"/>
-            <select 
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              style={{
-                background: 'rgba(0,0,0,0.5)', 
-                color: 'var(--hexa-cyan)', 
-                border: '1px solid rgba(255,255,255,0.1)', 
-                borderRadius: '4px', 
-                padding: '4px 8px', 
-                fontFamily: "'Share Tech Mono', monospace", 
-                fontSize: '0.85rem',
-                outline: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              <option value="minimaxai/minimax-m3">Minimax M3</option>
-              <option value="google/gemma-4-31b-it">Google Gemma 4 31B</option>
-              <option value="nvidia/nemotron-3-super-120b-a12b">Nemotron 3 Super 120B</option>
-              <option value="nvidia/nemotron-3-ultra-550b-a55b">Nemotron 3 Ultra 550B</option>
-              <option value="nvidia/nemotron-3-nano-30b-a3b">Nemotron 3 Nano 30B</option>
-              <option value="openai/gpt-oss-20b">GPT OSS 20B</option>
-              <option value="THUDM/glm-4-9b-chat">GLM 4 9B (Chat)</option>
-              <option value="z-ai/glm-5.2">GLM 5.2</option>
-              <option value="moonshotai/kimi-k2.6">Kimi 2.6</option>
-              <option value="meta/llama3-70b-instruct">Meta Llama 3 70B</option>
-            </select>
-          </div>
-        </div>
-        <div style={{display: 'flex', gap: '8px'}}>
-          <button className="btn-tech" onClick={toggleSpeaking} style={{padding: '6px 12px', fontSize: '0.8rem', borderColor: isSpeaking ? '#10b981' : '#ff003c', color: isSpeaking ? '#10b981' : '#ff003c'}}>
-            {isSpeaking ? <Volume2 size={14}/> : <VolumeX size={14}/>} {isSpeaking ? 'Mute AI' : 'Unmute AI'}
-          </button>
+          
+          {battery && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '6px', 
+              background: battery.percentage < 0.20 ? 'rgba(255,0,60,0.2)' : 'rgba(0,0,0,0.5)',
+              padding: '4px 10px', borderRadius: '20px', 
+              border: `1px solid ${battery.percentage < 0.20 ? '#ff003c' : 'var(--hexa-cyan)'}`,
+              color: battery.percentage < 0.20 ? '#ff003c' : 'var(--hexa-cyan)',
+              fontSize: '0.85rem'
+            }}>
+              <Battery size={16} color={battery.percentage < 0.20 ? '#ff003c' : 'var(--hexa-cyan)'}/>
+              <span>{(battery.percentage * 100).toFixed(0)}% ({battery.voltage.toFixed(1)}V)</span>
+            </div>
+          )}
+
           <button className="btn-emergency" onClick={() => setMessages([])} style={{padding: '6px 12px', fontSize: '0.8rem'}}>
             <XCircle size={14}/> Clear Memory
           </button>
@@ -2081,15 +2296,11 @@ function AIChat() {
             }}
           />
           <button 
-            onMouseDown={startListen}
-            onMouseUp={stopListen}
-            onMouseLeave={stopListen}
-            onTouchStart={startListen}
-            onTouchEnd={stopListen}
-            title="Hold to Speak" 
+            onClick={() => setVoiceMode(!voiceMode)}
+            title="Toggle Continuous Voice Mode" 
             style={{
-            background: isListening ? 'var(--hexa-purple)' : 'rgba(255,255,255,0.05)',
-            border: `1px solid ${isListening ? 'var(--hexa-purple)' : 'var(--glass-border)'}`,
+            background: voiceMode ? 'var(--hexa-purple)' : 'rgba(255,255,255,0.05)',
+            border: `1px solid ${voiceMode ? 'var(--hexa-purple)' : 'var(--glass-border)'}`,
             borderRadius: '4px',
             padding: '0 16px',
             color: '#fff',
@@ -2098,7 +2309,7 @@ function AIChat() {
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'all 0.3s ease',
-            animation: isListening ? 'pulse 1.5s infinite' : 'none'
+            animation: voiceMode ? 'pulse 1.5s infinite' : 'none'
           }}>
             <Mic size={20} />
           </button>
@@ -2117,8 +2328,127 @@ function AIChat() {
 }
 
 // ============================================
+// PAGE: ROBOT FACE DISPLAY
+// ============================================
+function RobotFacePage({ health }) {
+  const [currentEmotion, setCurrentEmotion] = useState('happy');
+  const [autoMode, setAutoMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const autoRef = useRef(null);
+
+  useEffect(() => {
+    if (autoMode) {
+      let idx = 0;
+      autoRef.current = setInterval(() => {
+        idx = (idx + 1) % EMOTION_LIST.length;
+        setCurrentEmotion(EMOTION_LIST[idx]);
+      }, 2000);
+    } else {
+      if (autoRef.current) clearInterval(autoRef.current);
+    }
+    return () => { if (autoRef.current) clearInterval(autoRef.current); };
+  }, [autoMode]);
+
+  const filteredEmotions = EMOTION_LIST.filter(e => e.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  const categories = {
+    'Basic': ['happy', 'sad', 'angry', 'surprised', 'neutral', 'sleepy', 'confused', 'disgusted', 'scared', 'bored'],
+    'Positive': ['excited', 'love', 'grateful', 'proud', 'amused', 'hopeful', 'confident', 'peaceful', 'cheerful', 'delighted', 'ecstatic', 'blissful', 'content', 'optimistic', 'inspired'],
+    'Negative': ['anxious', 'frustrated', 'disappointed', 'jealous', 'lonely', 'guilty', 'ashamed', 'heartbroken', 'devastated', 'furious', 'irritated', 'melancholy', 'gloomy', 'pessimistic', 'bitter'],
+    'Social': ['shy', 'embarrassed', 'flirty', 'sarcastic', 'smug', 'apologetic', 'sympathetic', 'curious', 'suspicious', 'mischievous'],
+    'Physical': ['tired', 'hungry', 'sick', 'dizzy', 'freezing', 'hot', 'energetic', 'relaxed', 'uncomfortable', 'pain'],
+    'Cognitive': ['thinking', 'focused', 'daydreaming', 'mindblown', 'eureka', 'calculating', 'puzzled', 'overwhelmed', 'determined', 'contemplating'],
+    'Robot': ['booting', 'charging', 'low_battery', 'error', 'updating', 'scanning', 'processing', 'idle', 'listening', 'speaking', 'alert', 'malfunction', 'rebooting', 'connected', 'disconnected'],
+    'Actions': ['greeting', 'farewell', 'celebrating', 'dancing', 'laughing', 'crying', 'yawning', 'winking', 'nodding', 'shaking_head', 'saluting', 'bowing', 'clapping', 'pointing', 'shrugging']
+  };
+
+  return (
+    <div className="page-content animate-fade-in" style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px'}}>
+        <h1 className="page-title" style={{marginBottom: 0}}><Eye size={24}/> ROBOT FACE DISPLAY</h1>
+        <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+          <span style={{fontSize: '0.9rem', color: 'var(--text-muted)'}}>Current: <strong style={{color: 'var(--hexa-cyan)'}}>{currentEmotion}</strong></span>
+          <button className={`btn-tech ${autoMode ? 'highlight' : ''}`} onClick={() => setAutoMode(!autoMode)}>
+            <RefreshCw size={14}/> {autoMode ? 'Stop Auto' : 'Auto Cycle'}
+          </button>
+        </div>
+      </div>
+
+      <div style={{display: 'flex', flex: 1, gap: '16px', overflow: 'hidden'}}>
+        {/* Face Canvas */}
+        <div className="panel" style={{flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0f1e', minHeight: '400px', position: 'relative'}}>
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, 
+            padding: '12px 24px', 
+            borderBottom: '1px solid rgba(0, 243, 255, 0.3)', 
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
+            background: 'rgba(0,0,0,0.4)',
+            gap: '16px',
+            zIndex: 10
+          }}>
+            <div style={{display: 'flex', alignItems: 'center', gap: '8px', color: health?.battery < 20 ? '#ff003c' : '#00f3ff'}}>
+              <Battery size={24} />
+              <span style={{fontSize: '1.2rem', fontWeight: 'bold', fontFamily: 'Outfit'}}>{health?.battery || 0}%</span>
+            </div>
+            <div style={{width: '1px', height: '24px', background: 'rgba(255,255,255,0.2)'}}></div>
+            <div style={{display: 'flex', alignItems: 'center', gap: '4px', color: '#a0aabf'}}>
+              <Zap size={18} color="#f59e0b" />
+              <span style={{fontSize: '1rem', fontFamily: "'Share Tech Mono', monospace"}}>{health?.voltage || '0.0'} V</span>
+            </div>
+          </div>
+          <RobotFace emotion={currentEmotion} size={400} />
+        </div>
+
+        {/* Emotion Selector */}
+        <div className="panel" style={{flex: 1, overflow: 'auto', padding: '16px'}}>
+          <input 
+            type="text" 
+            placeholder="Search emotions..." 
+            value={searchQuery} 
+            onChange={e => setSearchQuery(e.target.value)}
+            style={{width: '100%', padding: '8px 12px', marginBottom: '12px', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--glass-border)', color: '#fff', borderRadius: '6px', fontFamily: "'Rajdhani', sans-serif"}}
+          />
+          
+          {searchQuery ? (
+            <div style={{display: 'flex', flexWrap: 'wrap', gap: '6px'}}>
+              {filteredEmotions.map(e => (
+                <button key={e} onClick={() => { setCurrentEmotion(e); setAutoMode(false); }}
+                  className={currentEmotion === e ? 'btn-tech highlight' : 'btn-tech'}
+                  style={{fontSize: '0.75rem', padding: '4px 10px'}}>
+                  {e.replace(/_/g, ' ')}
+                </button>
+              ))}
+            </div>
+          ) : (
+            Object.entries(categories).map(([cat, emotions]) => (
+              <div key={cat} style={{marginBottom: '12px'}}>
+                <h3 style={{fontSize: '0.85rem', color: 'var(--hexa-cyan)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '1px'}}>{cat}</h3>
+                <div style={{display: 'flex', flexWrap: 'wrap', gap: '4px'}}>
+                  {emotions.filter(e => EMOTION_LIST.includes(e)).map(e => (
+                    <button key={e} onClick={() => { setCurrentEmotion(e); setAutoMode(false); }}
+                      className={currentEmotion === e ? 'btn-tech highlight' : 'btn-tech'}
+                      style={{fontSize: '0.7rem', padding: '3px 8px'}}>
+                      {e.replace(/_/g, ' ')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
 // MAIN APP
 // ============================================
+const GlobalAIChat = () => {
+  const location = useLocation();
+  return <AIChat isActiveTab={location.pathname === '/ai-chat'} />;
+};
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('swarmy_token'));
   const [connected, setConnected] = useState(false);
@@ -2173,7 +2503,7 @@ function App() {
       } catch (e) {}
     };
     fetchHealth();
-    const initTheme = localStorage.getItem('swarmy_theme') || 'default';
+    const initTheme = localStorage.getItem('swarmy_theme') || 'apple-dark';
     document.documentElement.setAttribute('data-theme', initTheme);
     
     const interval = setInterval(fetchHealth, 2000);
@@ -2224,6 +2554,7 @@ function App() {
         <div className="main-area">
           <TopBar health={health} onEmergencyStop={handleEmergencyStop} />
           <main className="main-content animate-slide-up">
+            <GlobalAIChat />
             <Routes>
               <Route path="/" element={<DashboardPage health={health} connected={connected} />} />
               <Route path="/launcher" element={<Launcher />} />
@@ -2234,11 +2565,13 @@ function App() {
               <Route path="/autonomous-mapping" element={<AutonomousMappingView connected={connected} />} />
               <Route path="/navigation" element={<NavigationView connected={connected} />} />
               <Route path="/about" element={<AboutRobot />} />
-              <Route path="/about" element={<AboutRobot />} />
-              <Route path="/ai-chat" element={<AIChat />} />
+              <Route path="/ai-chat" element={<></>} />
               <Route path="/terminal" element={<WebTerminal />} />
               <Route path="/all-launch" element={<AllLaunchFiles />} />
               <Route path="/system" element={<SystemManager />} />
+              <Route path="/robot-face" element={<RobotFacePage health={health} />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </main>
         </div>

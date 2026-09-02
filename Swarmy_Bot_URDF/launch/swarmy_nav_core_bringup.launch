@@ -34,11 +34,31 @@
         name="base_to_laser"
         args="0.10 0 0.12 0 0 0 base_link laser_frame 50"/>
 
+  <node pkg="tf"
+        type="static_transform_publisher"
+        name="base_to_sonar_left"
+        args="0.12 0.08 0.05 0.3 0 0 base_link sonar_left_link 50"/>
+
+  <node pkg="tf"
+        type="static_transform_publisher"
+        name="base_to_sonar_right"
+        args="0.12 -0.08 0.05 -0.3 0 0 base_link sonar_right_link 50"/>
+
   <rosparam command="load" file="$(find swarmy_cmd_vel)/config/base_params.yaml"/>
 
   <node pkg="swarmy_cmd_vel"
         type="swarmy_base_node.py"
         name="swarmy_base_node"
+        output="screen"/>
+
+  <node pkg="swarmy_cmd_vel"
+        type="battery_monitor_node.py"
+        name="battery_monitor_node"
+        output="screen"/>
+
+  <node pkg="swarmy_cmd_vel"
+        type="ultrasonic_node.py"
+        name="ultrasonic_node"
         output="screen"/>
 
   <include file="$(find ydlidar_ros_driver)/launch/G2.launch"/>

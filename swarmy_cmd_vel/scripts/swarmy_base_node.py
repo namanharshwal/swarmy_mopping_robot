@@ -17,6 +17,7 @@ import time
 import math
 import json
 import tf
+import Jetson.GPIO as GPIO
 from geometry_msgs.msg import Twist, Quaternion
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import JointState, Imu
@@ -80,6 +81,20 @@ def norm_angle(a):
 
 def open_serial():
     global ser
+    
+    # Wake up ESP32 via EN pin wired to Jetson Pin 40
+    try:
+        GPIO.setwarnings(False)
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setup(40, GPIO.OUT, initial=GPIO.LOW)
+        rospy.loginfo('[base_node] Resetting ESP32 via Jetson Pin 40...')
+        time.sleep(0.5) # hold in reset
+        GPIO.output(40, GPIO.HIGH)
+        rospy.loginfo('[base_node] ESP32 pulled out of reset. Waiting for boot...')
+        time.sleep(2.0) # wait for boot
+    except Exception as e:
+        rospy.logwarn('[base_node] Could not control Jetson.GPIO Pin 40: %s', e)
+
     ser = serial.Serial(PORT, BAUD, timeout=0.05)
     time.sleep(2.5)
     ser.reset_input_buffer()

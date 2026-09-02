@@ -24,8 +24,8 @@ function Login({ onLoginSuccess }) {
     setIsLoading(true);
 
     try {
-      // Connect to our local Node.js Authentication Backend
-      const response = await fetch(`http://${window.location.hostname}:3001/api/login`, {
+      // Connect to our local Node.js Authentication Backend (relative path works for both HTTP and HTTPS)
+      const response = await fetch(`/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })

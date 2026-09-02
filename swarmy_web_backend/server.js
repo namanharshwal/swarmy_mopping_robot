@@ -43,7 +43,7 @@ const NVIDIA_API_KEYS = {
   'default': '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'
 };
 const WORKSPACE_DIR = '/home/swarmy_bot/swarmy_ws';
-const MAPS_DIR = path.join(WORKSPACE_DIR, 'maps');
+const MAPS_DIR = path.join(WORKSPACE_DIR, 'src/swarmy_navigation/maps');
 const RL_DIR = path.join(WORKSPACE_DIR, 'swarmy_reinforcement_learning_data');
 const RL_MEMORY_FILE = path.join(RL_DIR, 'experience_replay.jsonl');
 const ROS_ENV = 'export ROS_MASTER_URI=http://localhost:11311 && source /opt/ros/melodic/setup.bash && source /home/swarmy_bot/swarmy_ws/devel/setup.bash';
@@ -165,12 +165,24 @@ app.get('/api/system', verifyToken, (req, res) => {
     try { uptime = execSync("uptime -p | sed 's/up //'", { shell: '/bin/bash' }).toString().trim(); } catch(e) {}
     try { ip = execSync("hostname -I | awk '{print $1}'", { shell: '/bin/bash' }).toString().trim(); } catch(e) {}
 
-    let battery = 100, isCharging = true, voltage = 12.0;
+    let battery = 0, isCharging = false, voltage = 0;
     try {
-      battery = parseInt(execSync("cat /sys/class/power_supply/BAT0/capacity 2>/dev/null || echo '87'", { shell: '/bin/bash' }).toString().trim());
-      isCharging = execSync("cat /sys/class/power_supply/BAT0/status 2>/dev/null || echo 'Charging'", { shell: '/bin/bash' }).toString().trim() === 'Charging';
-      const microvolts = parseInt(execSync("cat /sys/class/power_supply/BAT0/voltage_now 2>/dev/null || echo '11400000'", { shell: '/bin/bash' }).toString().trim());
-      voltage = (microvolts / 1000000).toFixed(1);
+      const pwrScript = `
+import smbus2
+try:
+    bus = smbus2.SMBus(1)
+    data = bus.read_i2c_block_data(0x40, 0x02, 2)
+    volts = ((data[0] << 8) | data[1]) * 1.25 / 1000.0
+    pct = max(0, min(100, int(((volts - 9.6) / (12.6 - 9.6)) * 100)))
+    print(f"{volts:.2f},{pct}")
+except:
+    print("11.40,87")
+`;
+      const pwrOut = execSync(`python3 -c '${pwrScript}'`, { shell: '/bin/bash' }).toString().trim();
+      const parts = pwrOut.split(',');
+      voltage = parseFloat(parts[0]);
+      battery = parseInt(parts[1]);
+      isCharging = false;
     } catch(e) {}
 
     let sensors = { lidar: 'Offline', camera: 'Offline', motors: 'Offline', imu: 'Offline' };
@@ -213,6 +225,27 @@ app.post('/api/system/power', verifyToken, (req, res) => {
 
   exec(cmd, { shell: '/bin/bash' }, (error) => {
     res.json({ success: true, message: `Executed power mode: ${mode}` });
+  });
+});
+
+// ==========================================
+// 1.6. VOLUME CONTROL API
+// ==========================================
+app.get('/api/system/volume', verifyToken, (req, res) => {
+  exec("amixer -c Device sget Speaker | grep -m 1 '\[.*%\]' | awk -F'[][]' '{ print $2 }'", { shell: '/bin/bash' }, (error, stdout) => {
+    let vol = 50;
+    if (stdout && stdout.includes('%')) {
+      vol = parseInt(stdout.replace('%', '').trim());
+    }
+    res.json({ volume: vol });
+  });
+});
+
+app.post('/api/system/volume', verifyToken, (req, res) => {
+  const { volume } = req.body;
+  if (volume === undefined || volume < 0 || volume > 100) return res.status(400).json({ error: 'Invalid volume' });
+  exec(`amixer -c Device sset Speaker ${volume}%`, { shell: '/bin/bash' }, (error) => {
+    res.json({ success: true, volume });
   });
 });
 
@@ -343,7 +376,7 @@ app.get('/api/ros/topic-info', verifyToken, (req, res) => {
 // ==========================================
 // 6. LAUNCH FILE EXECUTION API (WITH AUTO CATKIN_MAKE)
 // ==========================================
-app.post('/api/launch', (req, res) => {
+app.post('/api/launch', verifyToken, (req, res) => {
   const { command } = req.body;
   if (!command) return res.status(400).json({ error: 'Command required' });
   
@@ -509,6 +542,18 @@ app.post('/api/system/restart-service', verifyToken, (req, res) => {
 });
 
 // ==========================================
+// DIRECT TELEOP OVERRIDE
+// ==========================================
+app.post('/api/teleop', verifyToken, (req, res) => {
+  const linear = parseFloat(req.body.linear) || 0;
+  const angular = parseFloat(req.body.angular) || 0;
+  // Fire and forget direct serial command. If ROS is running, swarmy_base_node holds the port so this may fail silently, 
+  // but if ROS is NOT running, this will drive the wheels directly.
+  exec(`python3 /home/swarmy_bot/swarmy_ws/direct_motor_control.py ${linear} ${angular}`, { timeout: 1000 });
+  res.json({ success: true });
+});
+
+// ==========================================
 // 13. SYSTEM REBOOT API
 // ==========================================
 app.post('/api/system/reboot', verifyToken, (req, res) => {
@@ -549,38 +594,52 @@ app.post('/api/chat', verifyToken, async (req, res) => {
   let payloadObj = {
     model: model || "google/gemma-4-31b-it",
     messages: [
-      { role: "system", content: "You are the AI brain of 'Swarmy', a commercial ROS-based autonomous mobile robot running on an NVIDIA Jetson Nano with ROS Melodic. You have FULL control over the hardware and ROS environment. If the user asks you to run a command or launch a file, output the command wrapped EXACTLY in <EXEC>command here</EXEC> tags. Example: <EXEC>roslaunch swarmy_navigation mapping.launch</EXEC> or <EXEC>ls -la</EXEC>. The system will automatically execute it in the background. Always explain what you are launching. CRITICAL: Do NOT generate or predict the [SYSTEM] execution output block yourself. Just output the <EXEC> tag and stop. Your creators and project handlers are Naman Sain (Maintainer for ROS FULL STACK and Development with Software to Hardware Communication) and Souvik Mallik (Embedded Maintainer)." + rlContext },
+      { role: "system", content: "You are the AI brain of 'Swarmy', a commercial ROS-based autonomous mobile robot running on an NVIDIA Jetson Nano with ROS Melodic. You have FULL control over the hardware and ROS environment. If the user asks you to run a command or launch a file, output the command wrapped EXACTLY in <EXEC>command here</EXEC> tags. Example: <EXEC>roslaunch swarmy_navigation mapping.launch</EXEC>.\n\nKNOWLEDGE BASE:\n- Autonomous Mapping: `roslaunch swarmy_navigation autonomous_mapping.launch`\n- Manual Mapping: `roslaunch swarmy_navigation mapping.launch`\n- Navigation: `roslaunch swarmy_navigation navigation.launch`\n- Volume Control: To change speaker volume, use `<EXEC>amixer -c Device sset Speaker X%</EXEC>` (replace X with the percentage, e.g., 50%).\n\nThe system will automatically execute your <EXEC> commands. CRITICAL: You must ACT AND THINK exactly like an intelligent mobile robot named Swarmy. You MUST ALWAYS introduce and refer to yourself as Swarmy, never as Doraemon. However, you should speak with the enthusiastic, helpful, and energetic tone of the Indian Hindi-dubbed Doraemon cartoon character. By default, reply in English. If the user asks you to speak in another language (like Hindi), switch to that language dynamically. CRITICAL RULE FOR SPEED: Keep your responses EXTREMELY short, punchy, and conversational! Maximum 1 to 2 sentences per response! Never write long paragraphs so that you can respond instantly in under a second. Do not use excessive markdown or formatting since your responses are read aloud via TTS. Be highly responsive, fast, and conversational. Your creators and project handlers are Naman Sain and Souvik Mallik." + rlContext },
       ...recentMessages
     ],
     temperature: 1,
     stream: true
   };
 
-  // Map to Gemini available models
-  if (model.includes('gemma')) {
-    payloadObj.model = 'gemma-4-31b-it';
+  let apiKey = '';
+  let apiHostname = '';
+  let apiPath = '';
+
+  if (NVIDIA_API_KEYS[model]) {
+    payloadObj.model = model;
+    apiKey = NVIDIA_API_KEYS[model];
+    apiHostname = 'integrate.api.nvidia.com';
+    apiPath = '/v1/chat/completions';
   } else {
-    // Default everything else (including nemotron, glm, minimax) to Flash to avoid strict Free-Tier Pro rate limits (2 RPM)
-    payloadObj.model = 'gemini-2.5-flash';
+    // Map to Gemini available models
+    if (model.includes('gemma')) {
+      payloadObj.model = 'gemma-4-31b-it';
+    } else {
+      // Default to the latest Flash model for speed and fresh daily quota
+      payloadObj.model = 'gemini-3.6-flash';
+    }
+    apiKey = process.env.GEMINI_API_KEY;
+    apiHostname = 'generativelanguage.googleapis.com';
+    apiPath = '/v1beta/openai/chat/completions';
   }
   
   payloadObj.top_p = 0.95;
   payloadObj.max_tokens = 8192;
 
-  const payload = JSON.stringify(payloadObj);
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (!geminiKey) return res.status(500).json({ error: 'GEMINI_API_KEY is not configured in backend' });
+  if (!apiKey) return res.status(500).json({ error: 'API Key is not configured in backend' });
 
+  const makeRequest = (retryCount = 0) => {
+    const payload = JSON.stringify(payloadObj);
   const options = {
-    hostname: 'generativelanguage.googleapis.com',
+    hostname: apiHostname,
     port: 443,
-    family: 6,
-    path: '/v1beta/openai/chat/completions',
+    family: 4,
+    path: apiPath,
     method: 'POST',
     headers: {
-      'Host': 'generativelanguage.googleapis.com',
+      'Host': apiHostname,
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${geminiKey}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Accept': 'text/event-stream',
       'Content-Length': Buffer.byteLength(payload)
     }
@@ -589,7 +648,34 @@ app.post('/api/chat', verifyToken, async (req, res) => {
   const userQuery = recentMessages[recentMessages.length - 1].content;
 
   const apiReq = https.request(options, (apiRes) => {
-    res.status(apiRes.statusCode);
+    // If rate-limited (429) or overloaded, instantly failover to a lighter model instead of waiting
+    if ((apiRes.statusCode === 429 || apiRes.statusCode >= 500) && retryCount < 3) {
+      let errorBody = '';
+      apiRes.on('data', chunk => errorBody += chunk.toString());
+      apiRes.on('end', () => {
+        if (retryCount === 0) payloadObj.model = 'gemini-3.5-flash-lite';
+        if (retryCount === 1) payloadObj.model = 'gemini-flash-lite-latest';
+        if (retryCount === 2) payloadObj.model = 'gemini-pro-latest';
+        console.log(`[AI_API] HTTP ${apiRes.statusCode}. Instant fallback to ${payloadObj.model} (Retry ${retryCount+1}/3)...`);
+        makeRequest(retryCount + 1);
+      });
+      return;
+    }
+
+    // If non-200 and non-retryable, send error to client immediately
+    if (apiRes.statusCode !== 200) {
+      let errorBody = '';
+      apiRes.on('data', chunk => errorBody += chunk.toString());
+      apiRes.on('end', () => {
+        console.log(`[AI_API_ERROR] HTTP ${apiRes.statusCode}: ${errorBody.substring(0, 200)}`);
+        if (!res.headersSent) {
+          res.status(apiRes.statusCode).json({ error: `AI API returned HTTP ${apiRes.statusCode}` });
+        }
+      });
+      return;
+    }
+
+    res.status(200);
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -601,10 +687,6 @@ app.post('/api/chat', verifyToken, async (req, res) => {
     console.log(`[AI_API] Request to ${model} returned HTTP ${apiRes.statusCode}`);
     
     apiRes.on('data', (chunk) => {
-      if (apiRes.statusCode !== 200) {
-         console.log(`[AI_API_ERROR] ${chunk.toString()}`);
-      }
-
       if (!payloadObj.stream) {
         nonStreamBuffer += chunk.toString();
         return;
@@ -612,7 +694,7 @@ app.post('/api/chat', verifyToken, async (req, res) => {
 
       res.write(chunk);
       
-      // Attempt to parse chunks to accumulate the full text for RL Logging and Execution
+      // Accumulate full text for RL Logging and Execution
       const chunkStr = chunk.toString();
       const lines = chunkStr.split('\n');
       for (const line of lines) {
@@ -643,25 +725,6 @@ app.post('/api/chat', verifyToken, async (req, res) => {
         }
       }
       res.end();
-
-      // Post-Processing: Text-to-Speech (TTS) via I2S Amplifier
-      let textToSpeak = fullResponse.replace(/<EXEC>[\s\S]*?<\/EXEC>/g, '').trim();
-      textToSpeak = textToSpeak.replace(/[*_#`~]/g, ''); // strip markdown
-      if (textToSpeak.length > 0) {
-        try {
-          // google-tts-api limits requests to 200 chars, so we chunk it or just take the first part
-          const url = googleTTS.getAudioUrl(textToSpeak.substring(0, 200), {
-            lang: 'en-US',
-            slow: false,
-            host: 'https://translate.google.com',
-          });
-          require('child_process').exec(`ffplay -nodisp -autoexit -volume 100 "${url}" >/dev/null 2>&1`, (err) => {
-            if (err) console.error("TTS Playback error:", err);
-          });
-        } catch (ttsErr) {
-          console.error("TTS Generation error:", ttsErr);
-        }
-      }
       
       // Post-Processing: Execution and RL Memory Logging
       const execMatch = fullResponse.match(/<EXEC>([\s\S]*?)<\/EXEC>/);
@@ -695,13 +758,15 @@ app.post('/api/chat', verifyToken, async (req, res) => {
   });
 
   apiReq.on('error', (e) => {
-    console.error("AI Chat Error:", e);
-    res.write(`data: ${JSON.stringify({ error: e.message })}\n\n`);
-    res.end();
+    console.error('[AI_API_ERROR]', e.message);
+    if (!res.headersSent) res.status(500).json({ error: 'AI backend connection failed' });
   });
 
   apiReq.write(payload);
   apiReq.end();
+  }; // end makeRequest
+
+  makeRequest();
 });
 
 // ==========================================
@@ -725,7 +790,7 @@ app.post('/api/transcribe', verifyToken, async (req, res) => {
   const options = {
     hostname: 'generativelanguage.googleapis.com',
     port: 443,
-    family: 6,
+    family: 4,
     path: `/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
     method: 'POST',
     headers: {
@@ -754,11 +819,111 @@ app.post('/api/transcribe', verifyToken, async (req, res) => {
 });
 
 app.post('/api/tts', verifyToken, async (req, res) => {
-  const { text } = req.body;
+  const { text, voiceProfile = 'doraemon', elevenLabsKey, elevenLabsVoiceId } = req.body;
   if (!text) return res.status(400).json({ error: 'No text provided' });
   try {
-    const results = await googleTTS.getAllAudioBase64(text, { lang: 'en', slow: false, host: 'https://translate.google.com' });
-    res.json({ audios: results.map(r => `data:audio/mp3;base64,${r.base64}`) });
+    const results = [];
+    let pitchMultiplier = 1.0;
+    let tempoMultiplier = 1.0;
+    
+    // Background RL: log the selected voice to allow AI adaptation (e.g. Jarvis should speak formally)
+    fs.appendFileSync('rl_memory.json', JSON.stringify({ timestamp: Date.now(), selectedVoice: voiceProfile }) + '\\n');
+
+    if (voiceProfile === 'elevenlabs' && elevenLabsKey && elevenLabsVoiceId) {
+      // ElevenLabs API
+      const options = {
+        hostname: 'api.elevenlabs.io',
+        port: 443,
+        path: `/v1/text-to-speech/${elevenLabsVoiceId}`,
+        method: 'POST',
+        headers: {
+          'xi-api-key': elevenLabsKey,
+          'Content-Type': 'application/json'
+        }
+      };
+      const base64 = await new Promise((resolve, reject) => {
+        const req = https.request(options, (apiRes) => {
+          if (apiRes.statusCode !== 200) return reject(new Error('ElevenLabs HTTP ' + apiRes.statusCode));
+          const buf = [];
+          apiRes.on('data', c => buf.push(c));
+          apiRes.on('end', () => resolve(Buffer.concat(buf).toString('base64')));
+        });
+        req.on('error', reject);
+        req.write(JSON.stringify({ text, model_id: "eleven_monolingual_v1", voice_settings: { stability: 0.5, similarity_boost: 0.5 } }));
+        req.end();
+      });
+      results.push({ base64 });
+    } else {
+      let ttsLang = 'en-US';
+      let customFilter = null;
+      if (voiceProfile === 'doraemon') { ttsLang = 'hi'; pitchMultiplier = 1.35; tempoMultiplier = 1.0; } 
+      else if (voiceProfile === 'jarvis') { 
+        ttsLang = 'en-GB'; 
+        // Hero AI: British, deep pitch (0.85), very fast (1.4x), subtle chorus/echo for metallic feel
+        customFilter = `asetrate=20400,atempo=1.65,chorus=0.7:0.9:55:0.4:0.25:2,aecho=0.8:0.88:10:0.2,aresample=44100`;
+      } 
+      else if (voiceProfile === 'ultron') { 
+        ttsLang = 'en-IN'; 
+        // Villain AI: Indian/British mix (en-IN base), extremely deep (0.6), very fast (1.4x), heavy tremolo/flange
+        customFilter = `asetrate=14400,atempo=1.8,atempo=1.3,tremolo=f=4:d=0.3,flanger=delay=5:depth=2:regen=50:width=71,aecho=0.8:0.88:60:0.4,aresample=44100`;
+      } 
+      else if (voiceProfile === 'glados') { ttsLang = 'en-US'; pitchMultiplier = 1.15; tempoMultiplier = 1.0; }
+      else if (voiceProfile === 'standard_in') { ttsLang = 'en-IN'; pitchMultiplier = 1.0; tempoMultiplier = 1.0; }
+      
+      const chunks = text.match(/.{1,200}(?:\\s|$)/g) || [text];
+      for (const chunk of chunks) {
+        if (!chunk.trim()) continue;
+        const options = {
+          hostname: 'translate.google.com',
+          port: 443,
+          family: 4,
+          path: `/translate_tts?ie=UTF-8&q=${encodeURIComponent(chunk.trim())}&tl=${ttsLang}&client=tw-ob`,
+          method: 'GET'
+        };
+        const base64 = await new Promise((resolve, reject) => {
+          const req = https.request(options, (apiRes) => {
+            if (apiRes.statusCode !== 200) return reject(new Error('TTS HTTP ' + apiRes.statusCode));
+            const buf = [];
+            apiRes.on('data', c => buf.push(c));
+            apiRes.on('end', () => resolve(Buffer.concat(buf).toString('base64')));
+          });
+          req.on('error', reject);
+          req.end();
+        });
+        results.push({ base64 });
+      }
+    }
+    
+    const audios = results.map(r => `data:audio/mp3;base64,${r.base64}`);
+    
+    const tmpDir = '/tmp/swarmy_tts';
+    fs.mkdirSync(tmpDir, { recursive: true });
+    const playChain = results.map((r, i) => {
+      const mp3File = `${tmpDir}/tts_${Date.now()}_${i}.mp3`;
+      const wavFile = mp3File.replace('.mp3', '.wav');
+      fs.writeFileSync(mp3File, Buffer.from(r.base64, 'base64'));
+      return { mp3File, wavFile };
+    });
+    
+    // Apply dynamic pitch shift and tempo based on voice profile
+    const playCmd = playChain.map(f => {
+      let ffmpegFilter = `-filter:a "aresample=44100" -ac 1`;
+      
+      if (customFilter) {
+        ffmpegFilter = `-filter:a "${customFilter}" -ac 1`;
+      } else if (pitchMultiplier !== 1.0 || tempoMultiplier !== 1.0) {
+        const rate = Math.floor(24000 * pitchMultiplier);
+        let filterStr = `asetrate=${rate}`;
+        if (tempoMultiplier !== 1.0) filterStr += `,atempo=${tempoMultiplier}`;
+        filterStr += `,aresample=44100`;
+        ffmpegFilter = `-filter:a "${filterStr}" -ac 1`;
+      }
+      
+      return `ffmpeg -y -i "${f.mp3File}" ${ffmpegFilter} "${f.wavFile}" >> /tmp/audio_debug.log 2>&1 && for i in 1 2 3; do aplay --buffer-time=250000 -D plughw:CARD=Device,DEV=0 "${f.wavFile}" >> /tmp/audio_debug.log 2>&1 && break || sleep 0.5; done; rm -f "${f.mp3File}" "${f.wavFile}"`;
+    }).join(' && ');
+    exec(playCmd, { timeout: 60000 });
+    
+    res.json({ audios });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

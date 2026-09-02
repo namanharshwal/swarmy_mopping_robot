@@ -21,7 +21,16 @@ local_costmap:
 
   plugins:
     - {name: obstacle_layer,  type: "costmap_2d::ObstacleLayer"}
+    - {name: sonar_layer,     type: "range_sensor_layer::RangeSensorLayer"}
     - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
+
+  sonar_layer:
+    enabled: true
+    topics: ["/sonar_left", "/sonar_right"]
+    no_readings_timeout: 2.0
+    clear_threshold: 0.2
+    mark_threshold: 0.8
+    clear_on_max_reading: true
 
   obstacle_layer:
     enabled: true

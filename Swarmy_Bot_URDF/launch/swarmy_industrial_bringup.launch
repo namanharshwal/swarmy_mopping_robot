@@ -40,6 +40,16 @@
         name="base_to_laser"
         args="0.10 0 0.12 0 0 0 base_link laser_frame 50"/>
 
+  <node pkg="tf"
+        type="static_transform_publisher"
+        name="base_to_sonar_left"
+        args="0.12 0.08 0.05 0.3 0 0 base_link sonar_left_link 50"/>
+
+  <node pkg="tf"
+        type="static_transform_publisher"
+        name="base_to_sonar_right"
+        args="0.12 -0.08 0.05 -0.3 0 0 base_link sonar_right_link 50"/>
+
   <!-- Hardware base node: /joint_states + /wheel/odom + /imu/data_raw + cmd_vel -->
   <node pkg="swarmy_cmd_vel"
         type="swarmy_base_node.py"
@@ -81,4 +91,17 @@
         type="rviz"
         name="rviz"
         args="-d $(find Swarmy_Bot_URDF)/rviz/swarmy.rviz"/>
+
+  <!-- Battery Monitor Node (INA260) -->
+  <node pkg="swarmy_cmd_vel"
+        type="battery_monitor_node.py"
+        name="battery_monitor_node"
+        output="screen"/>
+
+  <!-- Ultrasonic Sensors Node -->
+  <node pkg="swarmy_cmd_vel"
+        type="ultrasonic_node.py"
+        name="ultrasonic_node"
+        output="screen"/>
 </launch>
+

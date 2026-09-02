@@ -16,6 +16,7 @@ from PIL import Image, ImageDraw
 try:
     import rospy
     from std_msgs.msg import String
+    from sensor_msgs.msg import BatteryState
     ROS_AVAILABLE = True
 except ImportError:
     ROS_AVAILABLE = False
@@ -25,11 +26,11 @@ from luma.oled.device import ssd1309
 
 LEX = 38
 REX = 90
-EY_BASE = 20
+EY_BASE = 28
 EYE_RX = 14
 EYE_RY = 11
 MOUTH_CX = 64
-MOUTH_Y = 50
+MOUTH_Y = 56
 
 def thick_arc(draw, bbox, start, end, fill, w):
     for i in range(w):
@@ -65,6 +66,8 @@ class SwarmyEmotionDisplay:
         self.frame = 0
         self.blink_time = time.time() + 2.6
         self.ros_initialized = False
+        self.battery_pct = 0.0
+        self.battery_volts = 0.0
 
         self.emotion_map = {
             'IDLE': self._render_idle,
@@ -542,6 +545,11 @@ class SwarmyEmotionDisplay:
         self.current_emotion = msg.data.strip().upper()
         self.last_update = time.time()
 
+    def batt_cb(self, msg):
+        self.battery_pct = msg.percentage * 100.0
+        self.battery_volts = msg.voltage
+
+
     def update_emotion(self):
         # Read from file fallback
         if os.path.exists('/tmp/robot_emotion.txt'):
@@ -582,6 +590,25 @@ class SwarmyEmotionDisplay:
         render_func = self.emotion_map.get(self.current_emotion, self._render_idle)
         render_func(draw, bob, blink)
 
+        # Draw Top Bar
+        draw.line([(0, 10), (128, 10)], fill='white', width=1)
+        
+        # Battery Icon
+        draw.rectangle([(2, 2), (12, 8)], outline='white')
+        draw.rectangle([(12, 4), (13, 6)], outline='white', fill='white')
+        width = int(8 * (self.battery_pct / 100.0))
+        if width > 0:
+            draw.rectangle([(3, 3), (3 + width, 7)], outline='white', fill='white')
+        
+        # Percentage Text
+        draw.text((18, 0), f"{int(self.battery_pct)}%", fill='white')
+        
+        # Separator Line
+        draw.line([(45, 0), (45, 10)], fill='white', width=1)
+        
+        # Voltage Text
+        draw.text((50, 0), f"{self.battery_volts:.1f}V", fill='white')
+
         self.device.display(image)
         self.frame += 1
 
@@ -591,10 +618,24 @@ class SwarmyEmotionDisplay:
             if ROS_AVAILABLE and not self.ros_initialized:
                 rospy.init_node('swarmy_oled_emotions', anonymous=True, disable_signals=True)
                 rospy.Subscriber('/robot_emotion', String, self.emotion_cb)
+                rospy.Subscriber('/battery_state', BatteryState, self.batt_cb)
                 self.ros_initialized = True
 
             try:
                 self.update_emotion()
+                # Update Battery Info Directly via I2C INA260
+                try:
+                    import smbus2
+                    bus = smbus2.SMBus(1)
+                    data = bus.read_i2c_block_data(0x40, 0x02, 2)
+                    volts = ((data[0] << 8) | data[1]) * 1.25 / 1000.0
+                    pct = max(0, min(100, int(((volts - 9.6) / (12.6 - 9.6)) * 100)))
+                    self.battery_volts = volts
+                    self.battery_pct = float(pct)
+                except Exception:
+                    # Fallback or error reading I2C
+                    pass
+
                 self.render()
             except Exception as e:
                 with open('/tmp/oled_crash.log', 'w') as f:

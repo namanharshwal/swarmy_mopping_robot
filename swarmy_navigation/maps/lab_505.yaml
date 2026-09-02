@@ -6,7 +6,7 @@
 # - Souvik Mallik: Embedded Maintainer
 # ============================================================================
 
-image: /home/swarmy_bot/swarmy_ws/maps/lab_505.pgm
+image: /home/swarmy_bot/swarmy_ws/src/swarmy_navigation/maps/lab_505.pgm
 resolution: 0.050000
 origin: [-25.000000, -25.000000, 0.000000]
 negate: 0
