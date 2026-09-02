@@ -40,8 +40,10 @@ sudo apt-get install -y \
     python-wstool \
     build-essential
 
-# 3. Python Requirements
+# 3. Python Requirements (Python 3 & 2)
 echo "[3/4] Installing Python Dependencies..."
+sudo apt-get install -y python-pip
+pip install pyserial
 pip3 install -r requirements.txt
 
 # 4. Web Dashboard (Node & React)
