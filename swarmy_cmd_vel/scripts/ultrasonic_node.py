@@ -24,13 +24,13 @@ def measure_distance(trig_pin, echo_pin):
     while GPIO.input(echo_pin) == 0:
         start_time = time.time()
         if start_time > timeout:
-            return -1.0
+            return 4.0 # Timeout means no obstacle, return max_range
 
     # Wait for echo to go LOW
     while GPIO.input(echo_pin) == 1:
         stop_time = time.time()
         if stop_time > timeout:
-            return -1.0
+            return 4.0 # Timeout means no obstacle, return max_range
 
     elapsed = stop_time - start_time
     distance = (elapsed * 34300) / 2.0 / 100.0 # meters
@@ -67,7 +67,12 @@ def main():
     while not rospy.is_shutdown():
         # Measure left
         dist_left = measure_distance(LEFT_TRIG, LEFT_ECHO)
-        if 0.02 < dist_left < 4.0:
+        
+        if dist_left > 0:
+            # If distance is out of bounds or timeout, cap it to 4.0 so the costmap clears
+            if dist_left > 4.0:
+                dist_left = 4.0
+            
             msg_left = Range()
             msg_left.header.stamp = rospy.Time.now()
             msg_left.header.frame_id = "sonar_left_link"
@@ -77,13 +82,18 @@ def main():
             msg_left.max_range = 4.0
             msg_left.range = dist_left
             pub_left.publish(msg_left)
+            
 
         # Small delay to prevent cross-talk between sensors
         time.sleep(0.01)
 
         # Measure right
         dist_right = measure_distance(RIGHT_TRIG, RIGHT_ECHO)
-        if 0.02 < dist_right < 4.0:
+        
+        if dist_right > 0:
+            if dist_right > 4.0:
+                dist_right = 4.0
+
             msg_right = Range()
             msg_right.header.stamp = rospy.Time.now()
             msg_right.header.frame_id = "sonar_right_link"
@@ -93,6 +103,7 @@ def main():
             msg_right.max_range = 4.0
             msg_right.range = dist_right
             pub_right.publish(msg_right)
+            
 
         rate.sleep()
 
