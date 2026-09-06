@@ -10,12 +10,18 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { Activity, Battery, Cpu, Wifi, WifiOff, Gamepad2, Navigation, AlertTriangle, Settings, FileText, LayoutDashboard, Power, Pause, RefreshCw, Save, Terminal, FolderTree, Network, Info, Play, MapPin, Database, Map, HardDrive, Thermometer, Clock, Globe, Zap, Shield, Eye, Radio, Bot, Rocket, XCircle, CheckCircle, MessageSquare, Send, Brain, MonitorUp, Server, RotateCw, FileCode, Maximize2, Palette, Compass, Mic, Volume2, VolumeX } from 'lucide-react';
+import { Activity, Menu,  Battery, Cpu, Wifi, WifiOff, Gamepad2, Navigation, AlertTriangle, Settings, FileText, LayoutDashboard, Power, Pause, RefreshCw, Save, Terminal, FolderTree, Network, Info, Play, MapPin, Database, Map, HardDrive, Thermometer, Clock, Globe, Zap, Shield, Eye, Radio, Bot, Rocket, XCircle, CheckCircle, MessageSquare, Send, Brain, MonitorUp, Server, RotateCw, FileCode, Maximize2, Palette, Compass, Mic, Volume2, VolumeX } from 'lucide-react';
 import Login from './Login';
 import nipplejs from 'nipplejs';
 import MatrixBackground from './MatrixBackground';
+import VncViewer from './VncViewer';
 import RobotFace, { EMOTION_LIST } from './RobotFace';
 import SettingsPage from './SettingsPage';
+import OpcUaPanel from './OpcUaPanel';
+import RoutePlannerPage from "./RoutePlannerPage";
+import ErrorBoundary from "./ErrorBoundary";
+import SidebarMenu from "./SidebarMenu";
+import IndustrialMappingPage from './IndustrialMappingPage';
 import './index.css';
 
 const THEMES = ['apple-dark', 'apple-light', 'midnight', 'obsidian', 'emerald', 'amethyst', 'gold', 'arctic', 'sunset', 'ocean', 'blossom', 'monolith', 'autumn', 'royal', 'mint', 'cyber', 'tokyo', 'lunar', 'blood', 'aurora'];
@@ -30,46 +36,7 @@ function authHeaders() {
 // ============================================
 // SIDEBAR NAVIGATION
 // ============================================
-function Sidebar({ connected, handleLogout }) {
-  const location = useLocation();
-  const isActive = (path) => location.pathname === path ? 'active-nav' : '';
 
-  return (
-    <aside className="sidebar">
-      <div className="logo-section">
-        <h1>SWARMY-DASHBOARD</h1>
-        <span className="badge">ENTERPRISE</span>
-      </div>
-      
-      <nav className="nav-links">
-        <Link to="/" className={`nav-link ${isActive('/')}`}><LayoutDashboard size={20} /> Dashboard</Link>
-        <Link to="/launcher" className={`nav-link ${isActive('/launcher')}`}><Rocket size={20} /> Mission Launcher</Link>
-        <Link to="/workspace" className={`nav-link ${isActive('/workspace')}`}><FolderTree size={20} /> Workspace IDE</Link>
-        <Link to="/ros-graph" className={`nav-link ${isActive('/ros-graph')}`}><Network size={20} /> ROS RQT Graph</Link>
-        <Link to="/controls" className={`nav-link ${isActive('/controls')}`}><Gamepad2 size={20} /> Teleoperation</Link>
-        <Link to="/mapping" className={`nav-link ${isActive('/mapping')}`}><Map size={20} /> 2D Mapping (SLAM)</Link>
-        <Link to="/autonomous-mapping" className={`nav-link ${isActive('/autonomous-mapping')}`}><Compass size={20} /> Autonomous Mapping</Link>
-        <Link to="/navigation" className={`nav-link ${isActive('/navigation')}`}><Navigation size={20} /> Auto Navigation</Link>
-        <Link to="/about" className={`nav-link ${isActive('/about')}`}><Info size={20} /> About Swarmy</Link>
-        <Link to="/ai-chat" className={`nav-link ${isActive('/ai-chat')}`}><Brain size={20} /> AI Assistant</Link>
-        <Link to="/terminal" className={`nav-link ${isActive('/terminal')}`}><MonitorUp size={20} /> Web Terminal</Link>
-        <Link to="/all-launch" className={`nav-link ${isActive('/all-launch')}`}><FileCode size={20} /> All Launch Files</Link>
-        <Link to="/system" className={`nav-link ${isActive('/system')}`}><Server size={20} /> System Manager</Link>
-        <Link to="/robot-face" className={`nav-link ${isActive('/robot-face')}`}><Eye size={20} /> Robot Face</Link>
-        <Link to="/settings" className={`nav-link ${isActive('/settings')}`}><Settings size={20} /> Settings</Link>
-      </nav>
-
-      <div style={{marginTop: 'auto'}}>
-        <div className={`status-badge ${!connected ? 'disconnected' : ''}`}>
-          {connected ? <><Wifi size={16} className="pulse-icon text-cyan" /> ROS Core Online</> : <><WifiOff size={16} className="text-red" /> ROS Core Offline</>}
-        </div>
-        <button className="btn-logout" onClick={handleLogout}>
-          <Power size={16} /> Disconnect
-        </button>
-      </div>
-    </aside>
-  );
-}
 
 // ============================================
 
@@ -90,6 +57,11 @@ function TopBar({ health, onEmergencyStop }) {
 
   return (
     <header className="top-bar">
+      <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
+        <button className="mobile-menu-btn" onClick={() => window.dispatchEvent(new Event('toggleMobileMenu'))}>
+          <Menu size={24} color="#00f3ff" />
+        </button>
+      </div>
       <div className="status-indicators">
         <div className="status-item"><Activity size={18} color={health.cpu > 80 ? '#ff003c' : '#00f3ff'} /> <span>{health.cpu ? health.cpu.toFixed(1) : 0}% CPU</span></div>
         <div className="status-item"><Thermometer size={18} color={health.temp > 75 ? '#ff003c' : '#00f3ff'} /> <span>{health.temp ? health.temp.toFixed(1) : 0}°C</span></div>
@@ -697,7 +669,46 @@ function Teleoperation() {
   const joystickZoneRef = useRef(null);
   const [speed, setSpeed] = useState({ linear: 0, angular: 0 });
   const [rosStatus, setRosStatus] = useState('connecting');
+  const [teleopEnabled, setTeleopEnabled] = useState(false);
+  const [teleopLoading, setTeleopLoading] = useState(false);
   const rosRef = useRef(null);
+
+  // Poll teleop bridge status every 3 seconds
+  useEffect(() => {
+    const checkStatus = () => {
+      fetch(`${API_URL}/api/teleop/status`, { headers: authHeaders() })
+        .then(r => r.json())
+        .then(data => setTeleopEnabled(data.active))
+        .catch(() => {});
+    };
+    checkStatus();
+    const interval = setInterval(checkStatus, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const toggleTeleop = async () => {
+    setTeleopLoading(true);
+    try {
+      const endpoint = teleopEnabled ? '/api/teleop/disable' : '/api/teleop/enable';
+      const resp = await fetch(`${API_URL}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() }
+      });
+      const data = await resp.json();
+      if (data.success) {
+        // Wait a moment for the process to start/stop, then re-check status
+        setTimeout(async () => {
+          const s = await fetch(`${API_URL}/api/teleop/status`, { headers: authHeaders() }).then(r => r.json());
+          setTeleopEnabled(s.active);
+          setTeleopLoading(false);
+        }, 2000);
+      } else {
+        setTeleopLoading(false);
+      }
+    } catch (e) {
+      setTeleopLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!joystickZoneRef.current) return;
@@ -782,8 +793,36 @@ function Teleoperation() {
     <div className="page-content animate-fade-in" style={{display: 'flex', gap: '24px'}}>
       <KeyboardTeleop rosInstance={rosRef.current} />
       <div className="panel" style={{flex: 1}}>
-        <h2><Gamepad2 size={18} /> Manual Teleoperation <span style={{fontSize: '0.6em', color: 'var(--hexa-cyan)', background: 'rgba(0, 243, 255, 0.1)', padding: '2px 6px', borderRadius: '4px', marginLeft: '8px'}}>v2.1 (Fixed)</span></h2>
-        {rosStatus !== 'connected' && <div className="alert-box warning" style={{marginBottom: '16px'}}>⚠️ ROSBridge {rosStatus}. Using Direct Serial Overide.</div>}
+        <h2><Gamepad2 size={18} /> Manual Teleoperation <span style={{fontSize: '0.6em', color: 'var(--hexa-cyan)', background: 'rgba(0, 243, 255, 0.1)', padding: '2px 6px', borderRadius: '4px', marginLeft: '8px'}}>v3.0 (Independent)</span></h2>
+        
+        {/* Enable/Disable Teleop Toggle */}
+        <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', padding: '12px', background: teleopEnabled ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', border: `1px solid ${teleopEnabled ? '#10b981' : '#ef4444'}`, borderRadius: '8px'}}>
+          <button
+            onClick={toggleTeleop}
+            disabled={teleopLoading}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: teleopLoading ? 'wait' : 'pointer',
+              background: teleopEnabled ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'linear-gradient(135deg, #10b981, #059669)',
+              color: '#fff', fontWeight: 700, fontSize: '0.95rem',
+              boxShadow: teleopEnabled ? '0 0 15px rgba(239,68,68,0.3)' : '0 0 15px rgba(16,185,129,0.3)',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <Power size={18} />
+            {teleopLoading ? 'Processing...' : teleopEnabled ? 'Disable Motor Control' : 'Enable Motor Control'}
+          </button>
+          <div style={{flex: 1}}>
+            <div style={{fontWeight: 600, color: teleopEnabled ? '#10b981' : '#ef4444', fontSize: '0.95rem'}}>
+              {teleopEnabled ? '🟢 Motors Active — Joystick Ready' : '🔴 Motors Offline — Enable to drive'}
+            </div>
+            <div style={{fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px'}}>
+              {teleopEnabled ? 'The robot will respond to joystick input. No mapping or navigation required.' : 'Click "Enable Motor Control" to activate independent joystick driving.'}
+            </div>
+          </div>
+        </div>
+
+        {rosStatus !== 'connected' && <div className="alert-box warning" style={{marginBottom: '16px'}}>⚠️ ROSBridge {rosStatus}. Using Direct Serial Override.</div>}
         {rosStatus === 'connected' && <div className="alert-box info" style={{marginBottom: '16px'}}>✅ Joystick connected to /cmd_vel via ROSBridge</div>}
         <div className="joystick-zone" ref={joystickZoneRef} style={{height: '350px', marginTop: '16px'}}></div>
         <div style={{display: 'flex', justifyContent: 'center', gap: '32px', marginTop: '24px'}}>
@@ -969,11 +1008,13 @@ function AutonomousMappingView({ connected }) {
         </div>
       </div>
 
-      <div style={{display: 'flex', flex: 1, gap: '16px', overflow: 'hidden'}}>
+      <div className="nav-view-body" style={{display: 'flex', flex: 1, gap: '16px', overflow: 'auto'}}>
         <div className="panel" style={isFullscreen ? {
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 9999, padding: 0, margin: 0, borderRadius: 0
         } : {flex: 3, padding: 0, overflow: 'hidden'}}>
-          <iframe key={vncKey} src={`http://${window.location.hostname}:6080/vnc.html?resize=scale&autoconnect=true`} style={{ width: '100%', height: '100%', border: 'none' }} title="VNC Stream" />
+          <div style={{position: 'relative', width: '100%', height: '85vh', flex: 1, minHeight: '400px'}}>
+            <VncViewer src={`http://${window.location.hostname}:6080/vnc.html?resize=scale&autoconnect=true`} />
+          </div>
           {isFullscreen && (
             <button onClick={() => setIsFullscreen(false)} style={{
               position: 'absolute', top: '16px', right: '16px', zIndex: 10000, background: 'rgba(255,0,60,0.8)', color: '#fff', border: 'none', padding: '8px 16px', cursor: 'pointer', fontWeight: 'bold'
@@ -1101,7 +1142,7 @@ function MappingView({ connected }) {
   const refreshVnc = () => { setVncKey(k => k + 1); };
 
   return (
-    <div className="page-content animate-fade-in" style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
+    <div className="page-content animate-fade-in" style={{minHeight: '100%', height: 'auto', display: 'flex', flexDirection: 'column', overflowY: 'auto', overflowX: 'hidden'}}>
       <KeyboardTeleop rosInstance={rosRef.current} />
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px'}}>
         <h1 className="page-title" style={{marginBottom: 0}}>2D SLAM MAPPING DASHBOARD</h1>
@@ -1131,12 +1172,14 @@ function MappingView({ connected }) {
         </div>
       </div>
       
-      <div style={{display: 'flex', flex: 1, gap: '16px', overflow: 'hidden'}}>
+      <div className="nav-view-body" style={{display: 'flex', flex: 1, gap: '16px', overflow: 'auto'}}>
         {/* VNC Stream Panel */}
         <div className="panel" style={isFullscreen ? {
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 9999, padding: 0, margin: 0, borderRadius: 0
         } : {flex: 3, padding: 0, overflow: 'hidden'}}>
-          <iframe key={vncKey} src={`http://${window.location.hostname}:6080/vnc.html?resize=scale&autoconnect=true`} style={{ width: '100%', height: '100%', border: 'none' }} title="VNC Stream" />
+          <div style={{position: 'relative', width: '100%', height: '85vh', flex: 1, minHeight: '400px'}}>
+            <VncViewer src={`http://${window.location.hostname}:6080/vnc.html?resize=scale&autoconnect=true`} />
+          </div>
           {isFullscreen && (
             <button onClick={() => setIsFullscreen(false)} style={{
               position: 'absolute', top: '16px', right: '16px', zIndex: 10000, background: 'rgba(255,0,60,0.8)', color: '#fff', border: 'none', padding: '8px 16px', cursor: 'pointer', fontFamily: "'Rajdhani', sans-serif", fontWeight: 'bold'
@@ -1172,6 +1215,7 @@ function MappingView({ connected }) {
 // PAGE: AUTONOMOUS NAVIGATION DASHBOARD
 // ============================================
 function NavigationView({ connected }) {
+  const [iframeInteract, setIframeInteract] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const joystickZoneRef = useRef(null);
   const [speed, setSpeed] = useState({ linear: 0, angular: 0 });
@@ -1333,7 +1377,7 @@ function NavigationView({ connected }) {
   };
 
   return (
-    <div className="page-content animate-fade-in" style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
+    <div className="page-content animate-fade-in" style={{minHeight: '100%', height: 'auto', display: 'flex', flexDirection: 'column', overflowY: 'auto', overflowX: 'hidden'}}>
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px'}}>
         <h1 className="page-title" style={{marginBottom: 0}}>AUTONOMOUS NAVIGATION DASHBOARD</h1>
         <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center'}}>
@@ -1362,11 +1406,13 @@ function NavigationView({ connected }) {
         </div>
       </div>
       
-      <div style={{display: 'flex', flex: 1, gap: '16px', overflow: 'hidden'}}>
+      <div className="nav-view-body" style={{display: 'flex', flex: 1, gap: '16px', overflow: 'auto'}}>
         <div className="panel" style={isFullscreen ? {
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 9999, padding: 0, margin: 0, borderRadius: 0
         } : {flex: 3, padding: 0, overflow: 'hidden'}}>
-          <iframe key={vncKey} src={`http://${window.location.hostname}:6080/vnc.html?resize=scale&autoconnect=true`} style={{ width: '100%', height: '100%', border: 'none' }} title="VNC Stream" />
+          <div style={{position: 'relative', width: '100%', height: '85vh', flex: 1, minHeight: '400px'}}>
+            <VncViewer src={`http://${window.location.hostname}:6080/vnc.html?resize=scale&autoconnect=true`} />
+          </div>
           {isFullscreen && (
             <button onClick={() => setIsFullscreen(false)} style={{
               position: 'absolute', top: '16px', right: '16px', zIndex: 10000, background: 'rgba(255,0,60,0.8)', color: '#fff', border: 'none', padding: '8px 16px', cursor: 'pointer', fontFamily: "'Rajdhani', sans-serif", fontWeight: 'bold'
@@ -2363,7 +2409,7 @@ function RobotFacePage({ health }) {
   };
 
   return (
-    <div className="page-content animate-fade-in" style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
+    <div className="page-content animate-fade-in" style={{minHeight: '100%', height: 'auto', display: 'flex', flexDirection: 'column', overflowY: 'auto', overflowX: 'hidden'}}>
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px'}}>
         <h1 className="page-title" style={{marginBottom: 0}}><Eye size={24}/> ROBOT FACE DISPLAY</h1>
         <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
@@ -2374,7 +2420,7 @@ function RobotFacePage({ health }) {
         </div>
       </div>
 
-      <div style={{display: 'flex', flex: 1, gap: '16px', overflow: 'hidden'}}>
+      <div className="nav-view-body" style={{display: 'flex', flex: 1, gap: '16px', overflow: 'auto'}}>
         {/* Face Canvas */}
         <div className="panel" style={{flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0f1e', minHeight: '400px', position: 'relative'}}>
           <div style={{
@@ -2455,43 +2501,6 @@ function App() {
   const [rosInstance, setRosInstance] = useState(null);
   const [health, setHealth] = useState({ cpu: 0, ram: 0, temp: 0, disk: 0, uptime: '...', ip: '...' });
 
-  useEffect(() => {
-    // Dynamic cursor glow orb and 3D Parallax Hologram Tilt effect
-    let requestRef;
-    const handleMouseMove = (e) => {
-      document.documentElement.style.setProperty('--cursor-x', `${e.clientX}px`);
-      document.documentElement.style.setProperty('--cursor-y', `${e.clientY}px`);
-      
-      // Use requestAnimationFrame for buttery smooth 60fps performance
-      if (requestRef) cancelAnimationFrame(requestRef);
-      requestRef = requestAnimationFrame(() => {
-        document.querySelectorAll('.panel, .glass-panel, .btn-launch').forEach(panel => {
-          const rect = panel.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          
-          // Apply 3D tilt only if the mouse is near or over the card
-          if (x > -100 && x < rect.width + 100 && y > -100 && y < rect.height + 100) {
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-            const rotateX = ((y - centerY) / centerY) * -6; // Max 6 deg tilt
-            const rotateY = ((x - centerX) / centerX) * 6;
-            
-            panel.style.transform = `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
-          } else {
-            panel.style.transform = `perspective(1200px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
-          }
-        });
-      });
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      if (requestRef) cancelAnimationFrame(requestRef);
-    };
-  }, []);
-
   // Fetch system health from backend API
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -2550,7 +2559,7 @@ function App() {
       <MatrixBackground />
       <div className="hexa-layout">
         <div className="cursor-glow" />
-        <Sidebar connected={connected} handleLogout={() => { localStorage.removeItem('swarmy_token'); setIsAuthenticated(false); }} />
+        <SidebarMenu connected={connected} handleLogout={() => { localStorage.removeItem('swarmy_token'); setIsAuthenticated(false); }} />
         <div className="main-area">
           <TopBar health={health} onEmergencyStop={handleEmergencyStop} />
           <main className="main-content animate-slide-up">
@@ -2561,8 +2570,8 @@ function App() {
               <Route path="/workspace" element={<WorkspaceIDE />} />
               <Route path="/ros-graph" element={<RosGraph />} />
               <Route path="/controls" element={<Teleoperation />} />
-              <Route path="/mapping" element={<MappingView connected={connected} />} />
-              <Route path="/autonomous-mapping" element={<AutonomousMappingView connected={connected} />} />
+              <Route path="/mapping" element={<IndustrialMappingPage autonomous={false} />} />
+              <Route path="/autonomous-mapping" element={<IndustrialMappingPage autonomous={true} />} />
               <Route path="/navigation" element={<NavigationView connected={connected} />} />
               <Route path="/about" element={<AboutRobot />} />
               <Route path="/ai-chat" element={<></>} />
@@ -2571,6 +2580,8 @@ function App() {
               <Route path="/system" element={<SystemManager />} />
               <Route path="/robot-face" element={<RobotFacePage health={health} />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/planner" element={<ErrorBoundary><RoutePlannerPage /></ErrorBoundary>} />
+              <Route path="/opcua" element={<ErrorBoundary><OpcUaPanel /></ErrorBoundary>} />
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </main>

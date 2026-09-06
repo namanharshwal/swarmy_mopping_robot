@@ -30,5 +30,11 @@
 
   <!-- Bridge RViz 'Publish Point' tool to move_base_simple/goal for manual waypoints -->
   <node pkg="swarmy_teleop" type="publish_point_to_goal.py" name="publish_point_to_goal" output="screen"/>
+
+  <!-- Fast TF publisher for the web Route Planner 2D robot icon -->
+  <node pkg="swarmy_navigation" type="robot_pose_bridge.py" name="robot_pose_bridge" output="screen"/>
+  
+  <!-- Intelligent multi-waypoint topological route executor -->
+  <node pkg="swarmy_navigation" type="route_executor.py" name="swarmy_route_executor" output="screen"/>
 </launch>
 

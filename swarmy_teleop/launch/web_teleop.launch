@@ -1,0 +1,22 @@
+<!--
+  ============================================================================
+  Project Handlers: Naman Sain & Souvik Mallik
+  
+  Maintainers:
+  - Naman Sain   : ROS FULL STACK and Development with Software to Hardware Communication
+  - Souvik Mallik: Embedded Maintainer
+  ============================================================================
+  
+  web_teleop.launch
+  Lightweight standalone launch file for web joystick teleop ONLY.
+  This does NOT start lidar, mapping, navigation, EKF, or gmapping.
+  It only starts the motor bridge node so the web joystick can drive the robot.
+-->
+
+<launch>
+  <!-- Web Teleop Bridge: subscribes to /cmd_vel and sends serial commands to Arduino -->
+  <node pkg="swarmy_teleop"
+        type="web_teleop_bridge.py"
+        name="web_teleop_bridge"
+        output="screen"/>
+</launch>

@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<!--
+  ============================================================================
+  Project Handlers: Naman Sain & Souvik Mallik
+  
+  Maintainers:
+  - Naman Sain   : ROS FULL STACK and Development with Software to Hardware Communication
+  - Souvik Mallik: Embedded Maintainer
+  ============================================================================
+-->
+<package format="2">
+  <name>swarmy_teleop</name>
+  <version>1.0.0</version>
+  <description>Independent web-based joystick teleoperation package for Swarmy Robot</description>
+
+  <maintainer email="namanharshwal@gmail.com">Naman Sain</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>rosbridge_server</exec_depend>
+  <exec_depend>swarmy_cmd_vel</exec_depend>
+</package>

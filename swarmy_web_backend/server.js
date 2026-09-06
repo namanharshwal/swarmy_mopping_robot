@@ -547,14 +547,117 @@ app.post('/api/system/restart-service', verifyToken, (req, res) => {
 app.post('/api/teleop', verifyToken, (req, res) => {
   const linear = parseFloat(req.body.linear) || 0;
   const angular = parseFloat(req.body.angular) || 0;
-  // Fire and forget direct serial command. If ROS is running, swarmy_base_node holds the port so this may fail silently, 
-  // but if ROS is NOT running, this will drive the wheels directly.
-  exec(`python3 /home/swarmy_bot/swarmy_ws/direct_motor_control.py ${linear} ${angular}`, { timeout: 1000 });
+  
+  // Do NOT run direct motor control if any ROS motor node is running!
+  // It causes serial port collision and mangles the commands.
+  try {
+    execSync(`pgrep -f "web_teleop_bridge|swarmy_base_node" 2>/dev/null`, { shell: '/bin/bash' });
+    // ROS node is active, do nothing.
+  } catch (e) {
+    // ROS node is NOT active, use direct fallback.
+    exec(`python3 /home/swarmy_bot/swarmy_ws/direct_motor_control.py ${linear} ${angular}`, { timeout: 1000 });
+  }
   res.json({ success: true });
 });
 
 // ==========================================
-// 13. SYSTEM REBOOT API
+// INDEPENDENT WEB TELEOP CONTROL
+// ==========================================
+let webTeleopProcess = null;
+
+app.post('/api/teleop/enable', verifyToken, (req, res) => {
+  // Check if web_teleop_bridge is already running
+  try {
+    execSync(`pgrep -f "web_teleop_bridge" 2>/dev/null`, { shell: '/bin/bash' });
+    return res.json({ success: true, message: 'Web teleop bridge is already running.' });
+  } catch(e) { /* Not running, proceed to launch */ }
+
+  // Check if swarmy_base_node is already running (from full bringup). If so, no need to launch the bridge.
+  try {
+    execSync(`pgrep -f "swarmy_base_node" 2>/dev/null`, { shell: '/bin/bash' });
+    return res.json({ success: true, message: 'Full base node already active. Joystick will use existing /cmd_vel subscriber.' });
+  } catch(e) { /* Not running, need to launch our bridge */ }
+
+  // Launch the lightweight web_teleop_bridge
+  const launchCmd = `source /opt/ros/melodic/setup.bash && cd ${WORKSPACE_DIR} && source devel/setup.bash && export ROS_MASTER_URI=http://localhost:11311 && roslaunch swarmy_teleop web_teleop.launch > /tmp/web_teleop.log 2>&1`;
+  webTeleopProcess = require('child_process').spawn('/bin/bash', ['-c', launchCmd], {
+    detached: true,
+    stdio: 'ignore'
+  });
+  webTeleopProcess.unref();
+  res.json({ success: true, message: 'Web teleop bridge launched! Joystick is now active.' });
+});
+
+app.post('/api/teleop/disable', verifyToken, (req, res) => {
+  exec(`pkill -f "web_teleop_bridge" 2>/dev/null`, { shell: '/bin/bash' }, () => {
+    webTeleopProcess = null;
+    res.json({ success: true, message: 'Web teleop bridge stopped.' });
+  });
+});
+
+app.get('/api/teleop/status', verifyToken, (req, res) => {
+  // Check if ANY motor driver is active (either the full base node or our lightweight bridge)
+  exec(`pgrep -f "web_teleop_bridge|swarmy_base_node" 2>/dev/null`, { shell: '/bin/bash' }, (error, stdout) => {
+    const active = !error && stdout.trim().length > 0;
+    res.json({ active });
+  });
+});
+
+// ==========================================
+// 14. MAP DATA API (YAML & PNG)
+// ==========================================
+app.get('/api/map/data', verifyToken, (req, res) => {
+  const { name } = req.query;
+  if (!name) return res.status(400).json({ error: 'Map name required' });
+  const yamlPath = path.join(WORKSPACE_DIR, 'src/swarmy_navigation/maps', `${name}.yaml`);
+  if (!fs.existsSync(yamlPath)) return res.status(404).json({ error: 'Map not found' });
+  
+  try {
+    const yamlContent = fs.readFileSync(yamlPath, 'utf-8');
+    const lines = yamlContent.split('\n');
+    const data = {};
+    lines.forEach(line => {
+      const idx = line.indexOf(':');
+      if (idx > -1) {
+        const key = line.substring(0, idx).trim();
+        let val = line.substring(idx + 1).trim();
+        if (val.startsWith('[') && val.endsWith(']')) {
+          val = val.replace('[', '').replace(']', '').split(',').map(n => parseFloat(n));
+        } else if (!isNaN(parseFloat(val))) {
+          val = parseFloat(val);
+        }
+        data[key] = val;
+      }
+    });
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/map/image', (req, res) => {
+  const { name, token } = req.query;
+  // Authenticate via query param for image tags
+  if (!token) return res.status(403).send('No token');
+  try {
+    jwt.verify(token, JWT_SECRET);
+  } catch(e) { return res.status(401).send('Invalid token'); }
+
+  const pgmPath = path.join(WORKSPACE_DIR, 'src/swarmy_navigation/maps', `${name}.pgm`);
+  const pngPath = path.join(WORKSPACE_DIR, 'src/swarmy_navigation/maps', `${name}.png`);
+  
+  if (!fs.existsSync(pgmPath)) return res.status(404).send('Not found');
+  
+  if (fs.existsSync(pngPath)) {
+    return res.sendFile(pngPath);
+  }
+  
+  exec(`python3 ${__dirname}/pgm_to_png.py "${pgmPath}" "${pngPath}"`, (err) => {
+    if (err) return res.status(500).send('Conversion failed');
+    res.sendFile(pngPath);
+  });
+});
+
+// ==========================================
+// 15. SYSTEM REBOOT API
 // ==========================================
 app.post('/api/system/reboot', verifyToken, (req, res) => {
   res.json({ success: true, message: 'Reboot initiated. System will be back in ~60 seconds.' });
@@ -616,7 +719,7 @@ app.post('/api/chat', verifyToken, async (req, res) => {
       payloadObj.model = 'gemma-4-31b-it';
     } else {
       // Default to the latest Flash model for speed and fresh daily quota
-      payloadObj.model = 'gemini-3.6-flash';
+      payloadObj.model = 'gemini-2.5-flash';
     }
     apiKey = process.env.GEMINI_API_KEY;
     apiHostname = 'generativelanguage.googleapis.com';
@@ -653,10 +756,16 @@ app.post('/api/chat', verifyToken, async (req, res) => {
       let errorBody = '';
       apiRes.on('data', chunk => errorBody += chunk.toString());
       apiRes.on('end', () => {
-        if (retryCount === 0) payloadObj.model = 'gemini-3.5-flash-lite';
-        if (retryCount === 1) payloadObj.model = 'gemini-flash-lite-latest';
-        if (retryCount === 2) payloadObj.model = 'gemini-pro-latest';
-        console.log(`[AI_API] HTTP ${apiRes.statusCode}. Instant fallback to ${payloadObj.model} (Retry ${retryCount+1}/3)...`);
+        // Switch to Gemini for fallback since Nvidia quota might be exhausted
+        apiKey = process.env.GEMINI_API_KEY;
+        apiHostname = 'generativelanguage.googleapis.com';
+        apiPath = '/v1beta/openai/chat/completions';
+        
+        if (retryCount === 0) payloadObj.model = 'gemini-2.5-flash';
+        if (retryCount === 1) payloadObj.model = 'gemini-2.5-flash';
+        if (retryCount === 2) payloadObj.model = 'gemini-2.5-pro';
+        
+        console.log(`[AI_API] HTTP ${apiRes.statusCode}. Instant fallback to ${payloadObj.model} on ${apiHostname} (Retry ${retryCount+1}/3)...`);
         makeRequest(retryCount + 1);
       });
       return;
@@ -825,6 +934,7 @@ app.post('/api/tts', verifyToken, async (req, res) => {
     const results = [];
     let pitchMultiplier = 1.0;
     let tempoMultiplier = 1.0;
+    let customFilter = null;
     
     // Background RL: log the selected voice to allow AI adaptation (e.g. Jarvis should speak formally)
     fs.appendFileSync('rl_memory.json', JSON.stringify({ timestamp: Date.now(), selectedVoice: voiceProfile }) + '\\n');
@@ -855,7 +965,7 @@ app.post('/api/tts', verifyToken, async (req, res) => {
       results.push({ base64 });
     } else {
       let ttsLang = 'en-US';
-      let customFilter = null;
+      
       if (voiceProfile === 'doraemon') { ttsLang = 'hi'; pitchMultiplier = 1.35; tempoMultiplier = 1.0; } 
       else if (voiceProfile === 'jarvis') { 
         ttsLang = 'en-GB'; 
@@ -921,12 +1031,56 @@ app.post('/api/tts', verifyToken, async (req, res) => {
       
       return `ffmpeg -y -i "${f.mp3File}" ${ffmpegFilter} "${f.wavFile}" >> /tmp/audio_debug.log 2>&1 && for i in 1 2 3; do aplay --buffer-time=250000 -D plughw:CARD=Device,DEV=0 "${f.wavFile}" >> /tmp/audio_debug.log 2>&1 && break || sleep 0.5; done; rm -f "${f.mp3File}" "${f.wavFile}"`;
     }).join(' && ');
-    exec(playCmd, { timeout: 60000 });
+    exec(playCmd, { timeout: 60000, shell: '/bin/bash' }, (err, stdout, stderr) => {
+      if (err) console.error("[TTS EXEC ERROR]:", err);
+      if (stdout) console.log("[TTS STDOUT]:", stdout);
+      if (stderr) console.error("[TTS STDERR]:", stderr);
+    });
     
     res.json({ audios });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+
+// ==========================================
+// OPC UA BRIDGE API
+// ==========================================
+let opcuaProcess = null;
+
+app.get('/api/opcua/status', (req, res) => {
+    if (opcuaProcess) {
+        res.json({ status: 'Running (PID: ' + opcuaProcess.pid + ')' });
+    } else {
+        res.json({ status: 'Stopped' });
+    }
+});
+
+app.post('/api/opcua/start', (req, res) => {
+    if (!opcuaProcess) {
+        const { spawn } = require('child_process');
+        const path = require('path');
+        opcuaProcess = spawn('bash', ['-c', 'source /opt/ros/melodic/setup.bash && source /home/swarmy_bot/swarmy_ws/devel/setup.bash && python3 ' + path.join(__dirname, 'opcua_server.py')]);
+        
+        opcuaProcess.on('exit', () => {
+            opcuaProcess = null;
+        });
+        
+        res.json({ success: true, message: 'OPC UA Bridge started.' });
+    } else {
+        res.json({ success: false, message: 'Already running.' });
+    }
+});
+
+app.post('/api/opcua/stop', (req, res) => {
+    if (opcuaProcess) {
+        opcuaProcess.kill();
+        opcuaProcess = null;
+        res.json({ success: true, message: 'OPC UA Bridge stopped.' });
+    } else {
+        res.json({ success: false, message: 'Not running.' });
+    }
 });
 
 app.use(express.static('/home/swarmy_bot/swarmy_ws/src/swarmy_web_app/dist'));
