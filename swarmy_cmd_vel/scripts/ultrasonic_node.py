@@ -11,7 +11,6 @@ RIGHT_ECHO = 35
 RIGHT_TRIG = 36
 
 def measure_distance(trig_pin, echo_pin):
-    # Send 10us pulse
     GPIO.output(trig_pin, GPIO.HIGH)
     time.sleep(0.00001)
     GPIO.output(trig_pin, GPIO.LOW)
@@ -20,17 +19,15 @@ def measure_distance(trig_pin, echo_pin):
     stop_time = time.time()
     timeout = start_time + 0.04 # 40ms timeout (~7 meters max)
 
-    # Wait for echo to go HIGH
     while GPIO.input(echo_pin) == 0:
         start_time = time.time()
         if start_time > timeout:
-            return 4.0 # Timeout means no obstacle, return max_range
+            return 4.0
 
-    # Wait for echo to go LOW
     while GPIO.input(echo_pin) == 1:
         stop_time = time.time()
         if stop_time > timeout:
-            return 4.0 # Timeout means no obstacle, return max_range
+            return 4.0
 
     elapsed = stop_time - start_time
     distance = (elapsed * 34300) / 2.0 / 100.0 # meters
@@ -46,7 +43,6 @@ def main():
     pub_left = rospy.Publisher('/sonar_left', Range, queue_size=10)
     pub_right = rospy.Publisher('/sonar_right', Range, queue_size=10)
 
-    # Delay to avoid Jetson.GPIO sysfs race condition with swarmy_base_node
     time.sleep(2.0)
 
     GPIO.setmode(GPIO.BOARD)
@@ -58,20 +54,19 @@ def main():
     GPIO.setup(RIGHT_ECHO, GPIO.IN)
 
     rospy.on_shutdown(cleanup)
-
     rate = rospy.Rate(10) 
     
     time.sleep(0.5)
     rospy.loginfo("Ultrasonic Node started successfully. Polling Left/Right sensors...")
 
     while not rospy.is_shutdown():
-        # Measure left
         dist_left = measure_distance(LEFT_TRIG, LEFT_ECHO)
         
         if dist_left > 0:
-            # If distance is out of bounds or timeout, cap it to 4.0 so the costmap clears
             if dist_left > 0.15:
-                dist_left = 0.15
+                # User only wants to avoid obstacles <= 15cm.
+                # If obstacle is further than 15cm (or timeout), we publish 4.0 to CLEAR the path!
+                dist_left = 4.0
             
             msg_left = Range()
             msg_left.header.stamp = rospy.Time.now()
@@ -79,20 +74,17 @@ def main():
             msg_left.radiation_type = Range.ULTRASOUND
             msg_left.field_of_view = 0.26 # ~15 degrees cone
             msg_left.min_range = 0.02
-            msg_left.max_range = 0.15
+            msg_left.max_range = 4.0
             msg_left.range = dist_left
             pub_left.publish(msg_left)
-            
 
-        # Small delay to prevent cross-talk between sensors
         time.sleep(0.01)
 
-        # Measure right
         dist_right = measure_distance(RIGHT_TRIG, RIGHT_ECHO)
         
         if dist_right > 0:
             if dist_right > 0.15:
-                dist_right = 0.15
+                dist_right = 4.0
 
             msg_right = Range()
             msg_right.header.stamp = rospy.Time.now()
@@ -100,10 +92,9 @@ def main():
             msg_right.radiation_type = Range.ULTRASOUND
             msg_right.field_of_view = 0.26
             msg_right.min_range = 0.02
-            msg_right.max_range = 0.15
+            msg_right.max_range = 4.0
             msg_right.range = dist_right
             pub_right.publish(msg_right)
-            
 
         rate.sleep()
 
