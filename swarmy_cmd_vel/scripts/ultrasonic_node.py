@@ -33,6 +33,20 @@ def measure_distance(trig_pin, echo_pin):
     distance = (elapsed * 34300) / 2.0 / 100.0 # meters
     return distance
 
+def get_robust_distance(trig_pin, echo_pin):
+    # Median filter over 3 readings to reject cross-talk, OS jitter, or false reflections
+    readings = []
+    for _ in range(3):
+        d = measure_distance(trig_pin, echo_pin)
+        if d > 0:
+            readings.append(d)
+        time.sleep(0.015)
+    
+    if len(readings) == 0:
+        return 4.0
+    readings.sort()
+    return readings[len(readings)//2]
+
 def cleanup():
     GPIO.cleanup()
     rospy.loginfo("Ultrasonic Node: GPIO cleaned up.")
@@ -57,15 +71,14 @@ def main():
     rate = rospy.Rate(10) 
     
     time.sleep(0.5)
-    rospy.loginfo("Ultrasonic Node started successfully. Polling Left/Right sensors...")
+    rospy.loginfo("Ultrasonic Node started successfully. Filtering distance to 8cm limit...")
 
     while not rospy.is_shutdown():
-        dist_left = measure_distance(LEFT_TRIG, LEFT_ECHO)
+        dist_left = get_robust_distance(LEFT_TRIG, LEFT_ECHO)
         
         if dist_left > 0:
-            if dist_left > 0.15:
-                # User only wants to avoid obstacles <= 15cm.
-                # If obstacle is further than 15cm (or timeout), we publish 4.0 to CLEAR the path!
+            if dist_left > 0.08:
+                # Floor detection, cross-talk, or far obstacle -> Clear path!
                 dist_left = 4.0
             
             msg_left = Range()
@@ -78,12 +91,12 @@ def main():
             msg_left.range = dist_left
             pub_left.publish(msg_left)
 
-        time.sleep(0.01)
+        time.sleep(0.02) # Extra delay between left and right burst to prevent cross-echo
 
-        dist_right = measure_distance(RIGHT_TRIG, RIGHT_ECHO)
+        dist_right = get_robust_distance(RIGHT_TRIG, RIGHT_ECHO)
         
         if dist_right > 0:
-            if dist_right > 0.15:
+            if dist_right > 0.08:
                 dist_right = 4.0
 
             msg_right = Range()
