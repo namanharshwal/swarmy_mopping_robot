@@ -79,14 +79,14 @@ def main():
         if dist_left > 0:
             if dist_left > 0.08:
                 # Floor detection, cross-talk, or far obstacle -> Clear path!
-                dist_left = 4.0
+                dist_left = 3.99
             
             msg_left = Range()
             msg_left.header.stamp = rospy.Time.now()
             msg_left.header.frame_id = "sonar_left_link"
             msg_left.radiation_type = Range.ULTRASOUND
             msg_left.field_of_view = 0.26 # ~15 degrees cone
-            msg_left.min_range = 0.02
+            msg_left.min_range = 0.05
             msg_left.max_range = 4.0
             msg_left.range = dist_left
             pub_left.publish(msg_left)
@@ -97,14 +97,14 @@ def main():
         
         if dist_right > 0:
             if dist_right > 0.08:
-                dist_right = 4.0
+                dist_right = 3.99
 
             msg_right = Range()
             msg_right.header.stamp = rospy.Time.now()
             msg_right.header.frame_id = "sonar_right_link"
             msg_right.radiation_type = Range.ULTRASOUND
             msg_right.field_of_view = 0.26
-            msg_right.min_range = 0.02
+            msg_right.min_range = 0.05
             msg_right.max_range = 4.0
             msg_right.range = dist_right
             pub_right.publish(msg_right)
