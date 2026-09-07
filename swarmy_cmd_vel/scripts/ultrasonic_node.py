@@ -2,7 +2,7 @@
 import rospy
 import Jetson.GPIO as GPIO
 import time
-from sensor_msgs.msg import Range
+from sensor_msgs.msg import LaserScan
 
 # Pin definitions (BOARD mode)
 LEFT_TRIG = 37
@@ -51,11 +51,26 @@ def cleanup():
     GPIO.cleanup()
     rospy.loginfo("Ultrasonic Node: GPIO cleaned up.")
 
+def create_scan_msg(frame_id, dist):
+    msg = LaserScan()
+    msg.header.stamp = rospy.Time.now()
+    msg.header.frame_id = frame_id
+    msg.angle_min = -0.13 # -7.5 degrees
+    msg.angle_max = 0.13  # +7.5 degrees
+    msg.angle_increment = 0.065 # 5 rays
+    msg.time_increment = 0.0
+    msg.scan_time = 0.1
+    msg.range_min = 0.05
+    msg.range_max = 4.0
+    msg.ranges = [dist] * 5
+    return msg
+
 def main():
     rospy.init_node('ultrasonic_node', anonymous=True)
     
-    pub_left = rospy.Publisher('/sonar_left', Range, queue_size=10)
-    pub_right = rospy.Publisher('/sonar_right', Range, queue_size=10)
+    # We publish as LaserScan to bypass crashing range_sensor_layer C++ plugin bugs
+    pub_left = rospy.Publisher('/sonar_left', LaserScan, queue_size=10)
+    pub_right = rospy.Publisher('/sonar_right', LaserScan, queue_size=10)
 
     time.sleep(2.0)
 
@@ -71,25 +86,17 @@ def main():
     rate = rospy.Rate(10) 
     
     time.sleep(0.5)
-    rospy.loginfo("Ultrasonic Node started successfully. Filtering distance to 8cm limit...")
+    rospy.loginfo("Ultrasonic Node started successfully. Publishing as LaserScan for 8cm limit...")
 
     while not rospy.is_shutdown():
         dist_left = get_robust_distance(LEFT_TRIG, LEFT_ECHO)
         
         if dist_left > 0:
             if dist_left > 0.08:
-                # Floor detection, cross-talk, or far obstacle -> Clear path!
+                # Floor detection, cross-talk, or far obstacle -> Clear path by publishing 3.99!
                 dist_left = 3.99
             
-            msg_left = Range()
-            msg_left.header.stamp = rospy.Time.now()
-            msg_left.header.frame_id = "sonar_left_link"
-            msg_left.radiation_type = Range.ULTRASOUND
-            msg_left.field_of_view = 0.26 # ~15 degrees cone
-            msg_left.min_range = 0.05
-            msg_left.max_range = 4.0
-            msg_left.range = dist_left
-            pub_left.publish(msg_left)
+            pub_left.publish(create_scan_msg("sonar_left_link", dist_left))
 
         time.sleep(0.02) # Extra delay between left and right burst to prevent cross-echo
 
@@ -99,15 +106,7 @@ def main():
             if dist_right > 0.08:
                 dist_right = 3.99
 
-            msg_right = Range()
-            msg_right.header.stamp = rospy.Time.now()
-            msg_right.header.frame_id = "sonar_right_link"
-            msg_right.radiation_type = Range.ULTRASOUND
-            msg_right.field_of_view = 0.26
-            msg_right.min_range = 0.05
-            msg_right.max_range = 4.0
-            msg_right.range = dist_right
-            pub_right.publish(msg_right)
+            pub_right.publish(create_scan_msg("sonar_right_link", dist_right))
 
         rate.sleep()
 
