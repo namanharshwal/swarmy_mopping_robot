@@ -70,8 +70,8 @@ def main():
         
         if dist_left > 0:
             # If distance is out of bounds or timeout, cap it to 4.0 so the costmap clears
-            if dist_left > 4.0:
-                dist_left = 4.0
+            if dist_left > 0.15:
+                dist_left = 0.15
             
             msg_left = Range()
             msg_left.header.stamp = rospy.Time.now()
@@ -79,7 +79,7 @@ def main():
             msg_left.radiation_type = Range.ULTRASOUND
             msg_left.field_of_view = 0.26 # ~15 degrees cone
             msg_left.min_range = 0.02
-            msg_left.max_range = 4.0
+            msg_left.max_range = 0.15
             msg_left.range = dist_left
             pub_left.publish(msg_left)
             
@@ -91,8 +91,8 @@ def main():
         dist_right = measure_distance(RIGHT_TRIG, RIGHT_ECHO)
         
         if dist_right > 0:
-            if dist_right > 4.0:
-                dist_right = 4.0
+            if dist_right > 0.15:
+                dist_right = 0.15
 
             msg_right = Range()
             msg_right.header.stamp = rospy.Time.now()
@@ -100,7 +100,7 @@ def main():
             msg_right.radiation_type = Range.ULTRASOUND
             msg_right.field_of_view = 0.26
             msg_right.min_range = 0.02
-            msg_right.max_range = 4.0
+            msg_right.max_range = 0.15
             msg_right.range = dist_right
             pub_right.publish(msg_right)
             
