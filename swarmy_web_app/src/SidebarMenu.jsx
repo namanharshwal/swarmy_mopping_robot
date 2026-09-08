@@ -13,6 +13,7 @@ const MENU_DATA = [
     links: [
       { to: "/", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
       { to: "/launcher", label: "Mission Launcher", icon: <Rocket size={18} /> },
+      { to: "/studio", label: "Swarmy Studio", icon: <Network size={18} /> },
     ]
   },
   {

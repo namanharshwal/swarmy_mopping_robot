@@ -22,6 +22,7 @@ import RoutePlannerPage from "./RoutePlannerPage";
 import ErrorBoundary from "./ErrorBoundary";
 import SidebarMenu from "./SidebarMenu";
 import IndustrialMappingPage from './IndustrialMappingPage';
+import SwarmyStudio from './components/SwarmyStudio/SwarmyStudio';
 import './index.css';
 
 const THEMES = ['apple-dark', 'apple-light', 'midnight', 'obsidian', 'emerald', 'amethyst', 'gold', 'arctic', 'sunset', 'ocean', 'blossom', 'monolith', 'autumn', 'royal', 'mint', 'cyber', 'tokyo', 'lunar', 'blood', 'aurora'];
@@ -2582,6 +2583,7 @@ function App() {
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/planner" element={<ErrorBoundary><RoutePlannerPage /></ErrorBoundary>} />
               <Route path="/opcua" element={<ErrorBoundary><OpcUaPanel /></ErrorBoundary>} />
+              <Route path="/studio" element={<ErrorBoundary><SwarmyStudio /></ErrorBoundary>} />
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </main>
