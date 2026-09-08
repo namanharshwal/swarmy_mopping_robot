@@ -23,17 +23,19 @@ const initialNodes = [
   {
     id: '1',
     type: 'input',
-    data: { label: 'granite_bear' },
+    data: { label: 'START_FLOW' },
     position: { x: 250, y: 50 },
     style: { 
-      background: '#ffffff', 
-      color: '#334155', 
-      border: '1px solid #e2e8f0', 
+      background: 'rgba(20, 25, 35, 0.95)', 
+      color: '#22d3ee', 
+      border: '1px solid #22d3ee', 
       borderRadius: '24px', 
-      padding: '8px 24px', 
+      padding: '10px 30px', 
       fontWeight: '600',
-      fontSize: '13px',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+      fontSize: '14px',
+      boxShadow: '0 0 15px rgba(34, 211, 238, 0.3)',
+      fontFamily: '"Orbitron", sans-serif',
+      letterSpacing: '1px'
     }
   },
 ];
@@ -55,7 +57,7 @@ export default function SwarmyStudio() {
     setEdges((eds) => addEdge({ 
       ...params, 
       type: 'smoothstep',
-      style: { stroke: edgeColor, strokeWidth: 1.5 },
+      style: { stroke: edgeColor, strokeWidth: 2 },
       animated: params.sourceHandle === 'success' || params.sourceHandle === 'failure' ? false : true,
       markerEnd: {
         type: MarkerType.ArrowClosed,
@@ -99,16 +101,16 @@ export default function SwarmyStudio() {
   );
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 60px)', background: '#f8fafc', fontFamily: '"Inter", sans-serif' }}>
+    <div style={{ display: 'flex', height: 'calc(100vh - 60px)', background: 'transparent', fontFamily: '"Rajdhani", sans-serif' }}>
       <ReactFlowProvider>
         <div style={{ flex: 1, position: 'relative' }} ref={reactFlowWrapper}>
           
           <div style={{ position: 'absolute', top: '24px', right: '24px', zIndex: 10, display: 'flex', gap: '12px' }}>
-            <button style={{ padding: '8px 16px', background: '#0ea5e9', border: 'none', borderRadius: '6px', color: 'white', fontWeight: '500', fontSize: '13px', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-              Update
+            <button className="btn-tech" style={{ padding: '8px 20px', fontSize: '14px', letterSpacing: '1px' }}>
+              UPDATE
             </button>
-            <button style={{ padding: '8px 16px', background: '#0284c7', border: 'none', borderRadius: '6px', color: 'white', fontWeight: '500', fontSize: '13px', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-              Update and Exit
+            <button className="btn-tech map-btn-red" style={{ padding: '8px 20px', fontSize: '14px', letterSpacing: '1px' }}>
+              UPDATE & EXIT
             </button>
           </div>
 
@@ -126,8 +128,8 @@ export default function SwarmyStudio() {
             minZoom={0.2}
             maxZoom={4}
           >
-            <Controls style={{ boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }} showInteractive={false} />
-            <Background color="#cbd5e1" gap={20} size={1.5} />
+            <Controls style={{ background: 'rgba(20, 25, 35, 0.9)', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.5)', border: '1px solid #334155', borderRadius: '8px', overflow: 'hidden' }} showInteractive={false} />
+            <Background color="#334155" gap={24} size={1.5} />
           </ReactFlow>
           
         </div>

@@ -14,12 +14,12 @@ export default function Sidebar() {
   const tabs = ['Tasks', 'Actions', 'Widgets'];
 
   return (
-    <aside style={{ width: '320px', background: '#ffffff', borderLeft: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', fontFamily: '"Inter", sans-serif' }}>
+    <aside style={{ width: '320px', background: 'rgba(10, 15, 25, 0.95)', borderLeft: '1px solid #1e293b', display: 'flex', flexDirection: 'column', fontFamily: '"Rajdhani", sans-serif', backdropFilter: 'blur(10px)' }}>
       
       {/* Header */}
-      <div style={{ padding: '24px 20px', borderBottom: '1px solid #e2e8f0' }}>
-        <h2 style={{ color: '#0f172a', margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600' }}>State machine</h2>
-        <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>Drag and drop tasks and actions to build your flow.</p>
+      <div style={{ padding: '24px 20px', borderBottom: '1px solid #1e293b' }}>
+        <h2 style={{ color: '#fff', margin: '0 0 8px 0', fontSize: '22px', fontWeight: '600', letterSpacing: '1px' }}>STATE MACHINE</h2>
+        <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>Drag and drop tasks and actions to build your flow.</p>
       </div>
 
       {/* Tabs */}
@@ -31,18 +31,19 @@ export default function Sidebar() {
             style={{ 
               flex: 1, 
               textAlign: 'center', 
-              padding: '8px 0', 
+              padding: '10px 0', 
               cursor: 'pointer', 
-              color: activeTab === tab ? '#ffffff' : '#64748b',
-              background: activeTab === tab ? '#0ea5e9' : '#ffffff',
-              border: activeTab === tab ? '1px solid #0ea5e9' : '1px solid #e2e8f0',
+              color: activeTab === tab ? '#22d3ee' : '#64748b',
+              background: activeTab === tab ? 'rgba(34, 211, 238, 0.1)' : 'rgba(20, 25, 35, 0.6)',
+              border: activeTab === tab ? '1px solid #22d3ee' : '1px solid #334155',
               borderRadius: '6px',
-              fontSize: '13px',
-              fontWeight: '500',
-              transition: 'all 0.2s'
+              fontSize: '14px',
+              fontWeight: '600',
+              transition: 'all 0.2s',
+              letterSpacing: '1px'
             }}
           >
-            {tab}
+            {tab.toUpperCase()}
           </div>
         ))}
       </div>
@@ -52,25 +53,25 @@ export default function Sidebar() {
         
         {activeTab === 'Tasks' && (
           <>
-            <NodeItem icon={<Navigation size={20} color="#0ea5e9"/>} label="go_to_place" subline="Navigation" type="taskNode" onDragStart={onDragStart} />
-            <NodeItem icon={<CheckCircle size={20} color="#0ea5e9"/>} label="rotate" subline="Precise turn" type="taskNode" onDragStart={onDragStart} />
-            <NodeItem icon={<Anchor size={20} color="#0ea5e9"/>} label="dock_bot" subline="Charging" type="taskNode" onDragStart={onDragStart} />
+            <NodeItem icon={<Navigation size={22} color="#22d3ee"/>} label="go_to_place" subline="Navigation" type="taskNode" onDragStart={onDragStart} />
+            <NodeItem icon={<CheckCircle size={22} color="#22d3ee"/>} label="rotate" subline="Precise turn" type="taskNode" onDragStart={onDragStart} />
+            <NodeItem icon={<Anchor size={22} color="#22d3ee"/>} label="dock_bot" subline="Charging" type="taskNode" onDragStart={onDragStart} />
           </>
         )}
 
         {activeTab === 'Actions' && (
           <>
-            <NodeItem icon={<Cpu size={20} color="#8b5cf6"/>} label="LocationAck_All" subline="Modbus TCP" type="actionNode" onDragStart={onDragStart} />
-            <NodeItem icon={<Cpu size={20} color="#8b5cf6"/>} label="ConveyorUnlock" subline="Modbus TCP" type="actionNode" onDragStart={onDragStart} />
-            <NodeItem icon={<Volume2 size={20} color="#8b5cf6"/>} label="announce" subline="AI Voice" type="actionNode" onDragStart={onDragStart} />
-            <NodeItem icon={<Smile size={20} color="#8b5cf6"/>} label="emotion" subline="Face update" type="actionNode" onDragStart={onDragStart} />
+            <NodeItem icon={<Cpu size={22} color="#c084fc"/>} label="LocationAck" subline="Modbus TCP" type="actionNode" onDragStart={onDragStart} />
+            <NodeItem icon={<Cpu size={22} color="#c084fc"/>} label="ConveyorUnlock" subline="Modbus TCP" type="actionNode" onDragStart={onDragStart} />
+            <NodeItem icon={<Volume2 size={22} color="#c084fc"/>} label="announce" subline="AI Voice" type="actionNode" onDragStart={onDragStart} />
+            <NodeItem icon={<Smile size={22} color="#c084fc"/>} label="emotion" subline="Face update" type="actionNode" onDragStart={onDragStart} />
           </>
         )}
 
         {activeTab === 'Widgets' && (
           <>
-            <NodeItem icon={<GitBranch size={20} color="#f59e0b"/>} label="Split On" subline="((robot.location))" type="logicNode" onDragStart={onDragStart} />
-            <NodeItem icon={<Settings size={20} color="#f59e0b"/>} label="Set Variable" subline="Global state" type="logicNode" onDragStart={onDragStart} />
+            <NodeItem icon={<GitBranch size={22} color="#fbbf24"/>} label="Split On" subline="((robot.location))" type="logicNode" onDragStart={onDragStart} />
+            <NodeItem icon={<Settings size={22} color="#fbbf24"/>} label="Set Variable" subline="Global state" type="logicNode" onDragStart={onDragStart} />
           </>
         )}
 
@@ -85,25 +86,25 @@ function NodeItem({ icon, label, subline, type, onDragStart }) {
       onDragStart={(e) => onDragStart(e, type, label, subline)} 
       draggable 
       style={{
-        background: '#ffffff',
-        border: '1px solid #e2e8f0',
+        background: 'rgba(30, 41, 59, 0.4)',
+        border: '1px solid #334155',
         borderRadius: '8px',
         padding: '16px 8px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '8px',
+        gap: '10px',
         cursor: 'grab',
-        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-        transition: 'box-shadow 0.2s, border-color 0.2s'
+        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
+        transition: 'all 0.2s ease-in-out'
       }}
-      onMouseOver={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)'; }}
-      onMouseOut={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)'; }}
+      onMouseOver={(e) => { e.currentTarget.style.borderColor = '#22d3ee'; e.currentTarget.style.boxShadow = '0 0 10px rgba(34, 211, 238, 0.3)'; e.currentTarget.style.background = 'rgba(30, 41, 59, 0.8)'; }}
+      onMouseOut={(e) => { e.currentTarget.style.borderColor = '#334155'; e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.3)'; e.currentTarget.style.background = 'rgba(30, 41, 59, 0.4)'; }}
     >
-      <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px' }}>
+      <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '12px', borderRadius: '8px', border: '1px solid #1e293b' }}>
         {icon}
       </div>
-      <span style={{ fontSize: '12px', fontWeight: '500', color: '#334155', textAlign: 'center', wordBreak: 'break-word' }}>{label}</span>
+      <span style={{ fontSize: '13px', fontWeight: '600', color: '#e2e8f0', textAlign: 'center', wordBreak: 'break-word', letterSpacing: '0.5px' }}>{label}</span>
     </div>
   );
 }
