@@ -6,9 +6,9 @@ import ReactFlow, {
   useEdgesState,
   Controls,
   Background,
+  MarkerType
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { v4 as uuidv4 } from 'uuid';
 
 import Sidebar from './Sidebar';
 import { TaskNode, ActionNode, LogicNode } from './CustomNodes';
@@ -23,9 +23,18 @@ const initialNodes = [
   {
     id: '1',
     type: 'input',
-    data: { label: 'START' },
-    position: { x: 250, y: 25 },
-    style: { background: '#222', color: '#00ffff', border: '1px solid #00ffff', borderRadius: '50px', padding: '10px 20px', fontWeight: 'bold' }
+    data: { label: 'granite_bear' },
+    position: { x: 250, y: 50 },
+    style: { 
+      background: '#ffffff', 
+      color: '#334155', 
+      border: '1px solid #e2e8f0', 
+      borderRadius: '24px', 
+      padding: '8px 24px', 
+      fontWeight: '600',
+      fontSize: '13px',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+    }
   },
 ];
 
@@ -39,14 +48,19 @@ export default function SwarmyStudio() {
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
 
   const onConnect = useCallback((params) => {
-    let edgeColor = '#aaa';
-    if(params.sourceHandle === 'success') edgeColor = '#00ff00';
-    if(params.sourceHandle === 'failure') edgeColor = '#ff0000';
+    let edgeColor = '#94a3b8'; // Default neutral
+    if(params.sourceHandle === 'success') edgeColor = '#10b981'; // Green for success
+    if(params.sourceHandle === 'failure') edgeColor = '#ef4444'; // Red for failure
     
     setEdges((eds) => addEdge({ 
       ...params, 
-      style: { stroke: edgeColor, strokeWidth: 2 },
-      animated: true 
+      type: 'smoothstep',
+      style: { stroke: edgeColor, strokeWidth: 1.5 },
+      animated: params.sourceHandle === 'success' || params.sourceHandle === 'failure' ? false : true,
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        color: edgeColor,
+      },
     }, eds));
   }, [setEdges]);
 
@@ -85,9 +99,19 @@ export default function SwarmyStudio() {
   );
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 60px)', background: '#050811' }}>
+    <div style={{ display: 'flex', height: 'calc(100vh - 60px)', background: '#f8fafc', fontFamily: '"Inter", sans-serif' }}>
       <ReactFlowProvider>
         <div style={{ flex: 1, position: 'relative' }} ref={reactFlowWrapper}>
+          
+          <div style={{ position: 'absolute', top: '24px', right: '24px', zIndex: 10, display: 'flex', gap: '12px' }}>
+            <button style={{ padding: '8px 16px', background: '#0ea5e9', border: 'none', borderRadius: '6px', color: 'white', fontWeight: '500', fontSize: '13px', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+              Update
+            </button>
+            <button style={{ padding: '8px 16px', background: '#0284c7', border: 'none', borderRadius: '6px', color: 'white', fontWeight: '500', fontSize: '13px', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+              Update and Exit
+            </button>
+          </div>
+
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -99,23 +123,13 @@ export default function SwarmyStudio() {
             onDragOver={onDragOver}
             nodeTypes={nodeTypes}
             fitView
+            minZoom={0.2}
+            maxZoom={4}
           >
-            <Controls style={{ background: '#222', color: '#00ffff', border: '1px solid #00ffff' }} />
-            <Background color="#222" gap={16} />
+            <Controls style={{ boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }} showInteractive={false} />
+            <Background color="#cbd5e1" gap={20} size={1.5} />
           </ReactFlow>
           
-          <div style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '15px' }}>
-            <button 
-              style={{ padding: '10px 20px', background: '#00ff00', border: 'none', borderRadius: '5px', color: '#000', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Orbitron', boxShadow: '0 0 10px rgba(0,255,0,0.5)' }}
-            >
-              RUN WORKFLOW
-            </button>
-            <button 
-              style={{ padding: '10px 20px', background: '#ff0000', border: 'none', borderRadius: '5px', color: '#fff', fontWeight: 'bold', cursor: 'pointer', fontFamily: 'Orbitron', boxShadow: '0 0 10px rgba(255,0,0,0.5)' }}
-            >
-              STOP
-            </button>
-          </div>
         </div>
         <Sidebar />
       </ReactFlowProvider>

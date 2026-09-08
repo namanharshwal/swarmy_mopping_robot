@@ -1,54 +1,107 @@
 import React from 'react';
 import { Handle, Position } from 'reactflow';
+import { Play, MapPin, Settings, Zap, ArrowRightRight, GitBranch } from 'lucide-react';
 
-// Shared styles
-const baseStyle = {
-  padding: '12px',
+const nodeContainerStyle = {
+  background: '#ffffff',
   borderRadius: '8px',
-  width: '160px',
+  border: '1px solid #e2e8f0',
+  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+  width: '220px',
+  fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   fontSize: '12px',
-  textAlign: 'center',
-  color: 'white',
-  fontFamily: 'Orbitron, sans-serif',
-  boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
-  border: '1px solid rgba(255,255,255,0.2)',
+  color: '#334155',
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden'
 };
 
-const handleStyle = { width: '10px', height: '10px', background: '#ccc' };
-const successHandleStyle = { ...handleStyle, background: '#00ff00', left: '30%' };
-const failHandleStyle = { ...handleStyle, background: '#ff0000', left: '70%' };
+const headerStyle = (color) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  padding: '8px 12px',
+  borderBottom: '1px solid #e2e8f0',
+  fontWeight: '600',
+  color: color,
+  background: '#ffffff'
+});
+
+const bodyStyle = {
+  padding: '12px',
+  background: '#f8fafc',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '6px'
+};
+
+const handleStyle = { width: '8px', height: '8px', background: '#94a3b8', border: '1px solid white' };
+
+const FooterHandles = ({ hasFailure = true }) => (
+  <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', padding: '8px', background: '#ffffff', borderTop: '1px solid #e2e8f0', position: 'relative' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <span style={{ background: '#10b981', color: 'white', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold' }}>Success</span>
+      <Handle type="source" position={Position.Bottom} id="success" style={{ ...handleStyle, background: '#10b981', bottom: '-4px', left: hasFailure ? '35%' : '50%' }} />
+    </div>
+    {hasFailure && (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <span style={{ background: '#ef4444', color: 'white', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold' }}>Failed</span>
+        <Handle type="source" position={Position.Bottom} id="failure" style={{ ...handleStyle, background: '#ef4444', bottom: '-4px', left: '65%' }} />
+      </div>
+    )}
+  </div>
+);
 
 export function TaskNode({ data }) {
   return (
-    <div style={{ ...baseStyle, background: 'linear-gradient(135deg, #0f2027, #203a43, #2c5364)' }}>
+    <div style={nodeContainerStyle}>
       <Handle type="target" position={Position.Top} style={handleStyle} />
-      <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '5px' }}>{data.label}</div>
-      <div style={{ fontSize: '10px', opacity: 0.8 }}>{data.subline || 'Task'}</div>
-      <Handle type="source" position={Position.Bottom} id="success" style={successHandleStyle} />
-      <Handle type="source" position={Position.Bottom} id="failure" style={failHandleStyle} />
+      <div style={headerStyle('#0ea5e9')}>
+        <MapPin size={14} /> {data.label}
+      </div>
+      <div style={bodyStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span style={{ color: '#64748b' }}>Waypoint</span>
+          <span style={{ fontWeight: '500' }}>{data.subline || 'None'}</span>
+        </div>
+      </div>
+      <FooterHandles />
     </div>
   );
 }
 
 export function ActionNode({ data }) {
   return (
-    <div style={{ ...baseStyle, background: 'linear-gradient(135deg, #141E30, #243B55)' }}>
+    <div style={nodeContainerStyle}>
       <Handle type="target" position={Position.Top} style={handleStyle} />
-      <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '5px', color: '#00ffff' }}>{data.label}</div>
-      <div style={{ fontSize: '10px', opacity: 0.8 }}>{data.subline || 'Action'}</div>
-      <Handle type="source" position={Position.Bottom} id="success" style={successHandleStyle} />
-      <Handle type="source" position={Position.Bottom} id="failure" style={failHandleStyle} />
+      <div style={headerStyle('#8b5cf6')}>
+        <Zap size={14} /> {data.label}
+      </div>
+      <div style={bodyStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span style={{ color: '#64748b' }}>Target</span>
+          <span style={{ fontWeight: '500' }}>{data.subline || 'Action'}</span>
+        </div>
+      </div>
+      <FooterHandles />
     </div>
   );
 }
 
 export function LogicNode({ data }) {
   return (
-    <div style={{ ...baseStyle, background: 'linear-gradient(135deg, #b92b27, #1565C0)' }}>
+    <div style={nodeContainerStyle}>
       <Handle type="target" position={Position.Top} style={handleStyle} />
-      <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '5px', color: '#ffcc00' }}>{data.label}</div>
-      <div style={{ fontSize: '10px', opacity: 0.8 }}>{data.subline || 'Logic'}</div>
-      <Handle type="source" position={Position.Bottom} id="success" style={{...successHandleStyle, left: '50%'}} />
+      <div style={headerStyle('#f59e0b')}>
+        <GitBranch size={14} /> {data.label}
+      </div>
+      <div style={bodyStyle}>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span style={{ color: '#64748b' }}>Condition</span>
+          <span style={{ fontWeight: '500' }}>{data.subline || 'Logic'}</span>
+        </div>
+      </div>
+      <FooterHandles hasFailure={false} />
     </div>
   );
 }

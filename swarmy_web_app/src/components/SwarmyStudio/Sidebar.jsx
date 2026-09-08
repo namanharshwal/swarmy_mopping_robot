@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaMapMarkerAlt, FaSyncAlt, FaBatteryFull, FaMicrochip, FaVolumeUp, FaSmile, FaRandom } from 'react-icons/fa';
+import { Settings, CheckCircle, Navigation, Anchor, Volume2, Cpu, Smile, GitBranch } from 'lucide-react';
 
 export default function Sidebar() {
   const [activeTab, setActiveTab] = useState('Tasks');
@@ -14,13 +14,16 @@ export default function Sidebar() {
   const tabs = ['Tasks', 'Actions', 'Widgets'];
 
   return (
-    <aside style={{ width: '300px', background: '#0a0f1e', borderLeft: '1px solid rgba(0,255,255,0.2)', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '20px', borderBottom: '1px solid rgba(0,255,255,0.2)', textAlign: 'center' }}>
-        <h2 style={{ color: '#00ffff', margin: 0, fontFamily: 'Orbitron' }}>Swarmy Studio</h2>
-        <p style={{ color: '#aaa', fontSize: '12px', marginTop: '5px' }}>Drag tasks to build workflow</p>
+    <aside style={{ width: '320px', background: '#ffffff', borderLeft: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', fontFamily: '"Inter", sans-serif' }}>
+      
+      {/* Header */}
+      <div style={{ padding: '24px 20px', borderBottom: '1px solid #e2e8f0' }}>
+        <h2 style={{ color: '#0f172a', margin: '0 0 8px 0', fontSize: '18px', fontWeight: '600' }}>State machine</h2>
+        <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>Drag and drop tasks and actions to build your flow.</p>
       </div>
 
-      <div style={{ display: 'flex', borderBottom: '1px solid rgba(0,255,255,0.2)' }}>
+      {/* Tabs */}
+      <div style={{ display: 'flex', padding: '16px 20px', gap: '8px' }}>
         {tabs.map(tab => (
           <div 
             key={tab} 
@@ -28,11 +31,15 @@ export default function Sidebar() {
             style={{ 
               flex: 1, 
               textAlign: 'center', 
-              padding: '10px 0', 
+              padding: '8px 0', 
               cursor: 'pointer', 
-              color: activeTab === tab ? '#00ffff' : '#888',
-              borderBottom: activeTab === tab ? '2px solid #00ffff' : 'none',
-              fontFamily: 'Orbitron', fontSize: '14px'
+              color: activeTab === tab ? '#ffffff' : '#64748b',
+              background: activeTab === tab ? '#0ea5e9' : '#ffffff',
+              border: activeTab === tab ? '1px solid #0ea5e9' : '1px solid #e2e8f0',
+              borderRadius: '6px',
+              fontSize: '13px',
+              fontWeight: '500',
+              transition: 'all 0.2s'
             }}
           >
             {tab}
@@ -40,48 +47,30 @@ export default function Sidebar() {
         ))}
       </div>
 
-      <div style={{ padding: '20px', flex: 1, overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: '15px', alignContent: 'flex-start' }}>
+      {/* Draggable Items Grid */}
+      <div style={{ padding: '8px 20px', flex: 1, overflowY: 'auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', alignContent: 'start' }}>
         
         {activeTab === 'Tasks' && (
           <>
-            <div className="dndnode task" onDragStart={(e) => onDragStart(e, 'taskNode', 'Go To Waypoint', 'Navigate to point')} draggable style={nodeStyle}>
-              <FaMapMarkerAlt size={24} color="#00ffff" />
-              <span>Go To Place</span>
-            </div>
-            <div className="dndnode task" onDragStart={(e) => onDragStart(e, 'taskNode', 'Rotate', 'Precise angular rotation')} draggable style={nodeStyle}>
-              <FaSyncAlt size={24} color="#00ffff" />
-              <span>Rotate</span>
-            </div>
-            <div className="dndnode task" onDragStart={(e) => onDragStart(e, 'taskNode', 'Dock', 'Auto-docking sequence')} draggable style={nodeStyle}>
-              <FaBatteryFull size={24} color="#00ffff" />
-              <span>Dock</span>
-            </div>
+            <NodeItem icon={<Navigation size={20} color="#0ea5e9"/>} label="go_to_place" subline="Navigation" type="taskNode" onDragStart={onDragStart} />
+            <NodeItem icon={<CheckCircle size={20} color="#0ea5e9"/>} label="rotate" subline="Precise turn" type="taskNode" onDragStart={onDragStart} />
+            <NodeItem icon={<Anchor size={20} color="#0ea5e9"/>} label="dock_bot" subline="Charging" type="taskNode" onDragStart={onDragStart} />
           </>
         )}
 
         {activeTab === 'Actions' && (
           <>
-            <div className="dndnode action" onDragStart={(e) => onDragStart(e, 'actionNode', 'PLC Trigger', 'Modbus / OPC UA')} draggable style={nodeStyle}>
-              <FaMicrochip size={24} color="#ff00ff" />
-              <span>PLC Trigger</span>
-            </div>
-            <div className="dndnode action" onDragStart={(e) => onDragStart(e, 'actionNode', 'Voice Announce', 'TTS output')} draggable style={nodeStyle}>
-              <FaVolumeUp size={24} color="#ff00ff" />
-              <span>Voice</span>
-            </div>
-            <div className="dndnode action" onDragStart={(e) => onDragStart(e, 'actionNode', 'Emotion', 'Face control')} draggable style={nodeStyle}>
-              <FaSmile size={24} color="#ff00ff" />
-              <span>Emotion</span>
-            </div>
+            <NodeItem icon={<Cpu size={20} color="#8b5cf6"/>} label="LocationAck_All" subline="Modbus TCP" type="actionNode" onDragStart={onDragStart} />
+            <NodeItem icon={<Cpu size={20} color="#8b5cf6"/>} label="ConveyorUnlock" subline="Modbus TCP" type="actionNode" onDragStart={onDragStart} />
+            <NodeItem icon={<Volume2 size={20} color="#8b5cf6"/>} label="announce" subline="AI Voice" type="actionNode" onDragStart={onDragStart} />
+            <NodeItem icon={<Smile size={20} color="#8b5cf6"/>} label="emotion" subline="Face update" type="actionNode" onDragStart={onDragStart} />
           </>
         )}
 
         {activeTab === 'Widgets' && (
           <>
-            <div className="dndnode logic" onDragStart={(e) => onDragStart(e, 'logicNode', 'Split On', 'Condition / If-Else')} draggable style={nodeStyle}>
-              <FaRandom size={24} color="#ffcc00" />
-              <span>Split On</span>
-            </div>
+            <NodeItem icon={<GitBranch size={20} color="#f59e0b"/>} label="Split On" subline="((robot.location))" type="logicNode" onDragStart={onDragStart} />
+            <NodeItem icon={<Settings size={20} color="#f59e0b"/>} label="Set Variable" subline="Global state" type="logicNode" onDragStart={onDragStart} />
           </>
         )}
 
@@ -90,20 +79,31 @@ export default function Sidebar() {
   );
 }
 
-const nodeStyle = {
-  width: '110px',
-  height: '90px',
-  border: '1px solid rgba(0, 255, 255, 0.3)',
-  borderRadius: '8px',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '10px',
-  cursor: 'grab',
-  background: 'rgba(0,0,0,0.3)',
-  color: 'white',
-  fontSize: '12px',
-  fontFamily: 'Orbitron',
-  boxShadow: '0 4px 6px rgba(0,0,0,0.3)'
-};
+function NodeItem({ icon, label, subline, type, onDragStart }) {
+  return (
+    <div 
+      onDragStart={(e) => onDragStart(e, type, label, subline)} 
+      draggable 
+      style={{
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
+        borderRadius: '8px',
+        padding: '16px 8px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '8px',
+        cursor: 'grab',
+        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        transition: 'box-shadow 0.2s, border-color 0.2s'
+      }}
+      onMouseOver={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)'; }}
+      onMouseOut={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)'; }}
+    >
+      <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px' }}>
+        {icon}
+      </div>
+      <span style={{ fontSize: '12px', fontWeight: '500', color: '#334155', textAlign: 'center', wordBreak: 'break-word' }}>{label}</span>
+    </div>
+  );
+}
