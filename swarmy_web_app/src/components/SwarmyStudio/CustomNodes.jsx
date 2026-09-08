@@ -1,6 +1,6 @@
 import React from 'react';
 import { Handle, Position } from 'reactflow';
-import { Play, MapPin, Settings, Zap, ArrowRightRight, GitBranch } from 'lucide-react';
+import { Play, MapPin, Settings, Zap, GitBranch } from 'lucide-react';
 
 const nodeContainerStyle = {
   background: '#ffffff',
