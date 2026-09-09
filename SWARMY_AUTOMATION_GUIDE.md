@@ -1,6 +1,6 @@
 # Swarmy Automation & Integration Guide
 
-This document outlines the usage of the two major industrial upgrades added to the Swarmy web dashboard: the **OPC UA Interface** and **Swarmy Studio**.
+This document outlines the usage of the two major industrial upgrades built into the Swarmy web dashboard: the **OPC UA Interface** and **Swarmy Studio**.
 
 ---
 
@@ -18,7 +18,7 @@ The OPC UA panel is designed to bridge the gap between Swarmy's internal ROS net
 At the bottom of the page, you will find the **PLC Simulator**. This allows you to test the bridge without needing a real physical PLC:
 
 * **Read Robot State:** Click `FETCH LIVE DATA`. The Node.js backend runs a hidden Python client to read `PositionX`, `PositionY`, and `Status` from the server, displaying it on the screen.
-* **Send Move Commands (Navigation):** Type a target X and Y coordinate, then click `Send Move`. This writes to the `CommandX`, `CommandY`, and `TriggerMove` variables. The internal bridge detects this and automatically publishes a `/move_base_simple/goal` to ROS, making the robot drive to the location!
+* **Send Move Commands (Navigation):** Type a target X and Y coordinate, then click `Send Move`. This writes to the `CommandX`, `CommandY`, and `TriggerMove` variables. The internal bridge detects this and automatically publishes a `/move_base_simple/goal` to ROS, making the robot drive to the location.
 * **Send Task Commands:** Type a custom string (e.g., `UNLOCK_CONVEYOR`) and click `Send Task`. This triggers custom ROS string topics that you can use to trigger actuators or external factory hardware.
 
 > [!IMPORTANT]
@@ -28,32 +28,39 @@ At the bottom of the page, you will find the **PLC Simulator**. This allows you 
 
 ## 2. Swarmy Studio (State Machine Builder)
 
-Swarmy Studio is a drag-and-drop workflow editor inspired by enterprise AMR software (like GT Studio and MiR Fleet). It allows you to program complex, conditional robot missions without writing code.
+Swarmy Studio is a drag-and-drop workflow editor inspired by enterprise AMR software (like GT Studio and MiR Fleet). It allows you to program complex, conditional robot missions visually without writing code.
 
-### The Component Sidebar
-On the right side of the screen, you have access to three tabs of components:
-* **Tasks (Teal):** Physical robot movements (Go to waypoint, Follow path, Dock/Undock, Actuate payload lifters).
-* **Actions (Purple):** API and Hardware triggers (Modbus/OPC UA handshakes, GPIO toggles, Webhooks, AI Voice TTS, Face Emotions).
-* **Widgets (Amber):** Logic gates (If/Else splits, Loops, Variables, Flow Termination).
+### The Component Library
+On the right side of the screen, you have access to a massive library of 24 components split into three categories:
+
+* **Tasks (Teal - Physical Navigation):**
+  * `go_to_place`, `follow_path`, `rotate`, `dock_bot`, `undock_bot`, `lift_payload`, `drop_payload`, `wait_time`, `move_velocity`.
+* **Actions (Purple - Software & APIs):**
+  * `LocationAck`, `ConveyorUnlock`, `trigger_gpio`, `read_gpio`, `call_rest_api`, `send_email`, `announce` (AI Voice TTS), `play_sound`, `emotion`.
+* **Widgets (Amber - Logic & Flow):**
+  * `Split On`, `Set Variable`, `Loop`, `Wait Event`, `Sub-Flow`, `End Flow`.
 
 ### Building a Workflow
 1. **Drag and Drop:** Click and hold any component from the sidebar, then drag it onto the dotted canvas.
-2. **Wiring (Success vs Failure):** 
+2. **Configure Properties:** Click on the node you just dropped. The right sidebar will transition into a **Properties Panel**. Here, you can type in specific parameters for that node (e.g., defining `X` and `Y` coordinates for a `go_to_place` node, or typing the `Speech Text` for an `announce` node).
+3. **Wiring (Success vs Failure):** 
    * Every node (except logic terminators) has two output handles at the bottom: **Success (Green)** and **Failed (Red)**.
    * Click and drag from the **Success** pill of one node to the top input handle of the next node.
-   * If a task might fail (e.g., the robot path is blocked, or the PLC doesn't respond), you can drag a wire from the **Failed** pill to a fallback node (like an AI Voice `announce` node saying "I am stuck!").
-3. **Panning & Zooming:** You can scroll to zoom in/out, and click-and-drag the empty canvas to pan around massive workflows.
+   * If a task might fail (e.g., the robot path is blocked), you can drag a wire from the **Failed** pill to a fallback node (like an AI Voice `announce` node saying "I am stuck!").
 
 ---
 
-## 3. What's Next? (Phase 2 & 3)
+## 3. The Execution Engine
 
-You currently have **Phase 1** completed, which means the industrial-grade UI, the drag-and-drop mechanics, and the component library are fully functional. 
+Once your flow chart is built, it's time to run it on the physical robot.
 
-To make Swarmy actually execute the workflows you draw, we need to build the next phases:
-
-* **Phase 2 (Configurable Nodes):** We need to make the nodes clickable. When you click `go_to_place`, a menu should pop up asking "Which waypoint?". When you click `announce`, it should ask "What should I say?".
-* **Phase 3 (The Execution Engine):** When you click the `UPDATE & EXIT` button, the React UI will compile your flowchart into a JSON file and send it to a new ROS Python node. That node will read the JSON, find the `START` node, and physically drive the robot block-by-block based on the wires you drew!
+1. **Saving the Flow:** Click the **UPDATE** button in the top right. The web interface compiles your visual flowchart into a JSON file (`swarmy_workflow.json`) and securely saves it to the backend server.
+2. **Running the Flow:** Click **UPDATE & RUN**. The backend will instantly spawn the background **Python Execution Engine**.
+3. **How it Works Under the Hood:**
+   * The Python ROS node (`swarmy_workflow_engine.py`) boots up and reads the JSON file.
+   * It locates the `START_FLOW` input node.
+   * It traverses the graph, automatically evaluating success/failure routes.
+   * When it lands on a node, it reads the custom configurations you typed into the Properties Panel, and publishes the corresponding hardware commands to ROS (e.g., publishing a `PoseStamped` goal to `/move_base_simple/goal`).
 
 > [!TIP]
-> Whenever you are ready, simply ask me to begin Phase 2, and I will add the clickable properties panels to the nodes!
+> You can monitor the live execution steps of the Python engine by keeping an eye on the Server terminal panel in your web dashboard, or by watching Swarmy physically move in the real world!
