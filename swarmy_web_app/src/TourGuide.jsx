@@ -6,6 +6,8 @@ import './TourGuide.css';
 export default function TourGuide() {
   useEffect(() => {
     const startTour = () => {
+      // Force open mobile menu if on mobile
+      window.dispatchEvent(new Event('toggleMobileMenu-force-open'));
       // Create fresh driver instance every time to avoid stale DOM refs
       const driverObj = driver({
         showProgress: true,
@@ -88,7 +90,7 @@ export default function TourGuide() {
       driverObj.drive();
     };
 
-    const handleStartTour = () => startTour();
+    const handleStartTour = () => setTimeout(() => startTour(), 400);
     window.addEventListener('start-tour', handleStartTour);
 
     if (localStorage.getItem('swarmy_tour_completed_v4') !== 'true') {

@@ -60,8 +60,14 @@ const MENU_DATA = [
 
 function NavGroup({ group, activePath, onNavClick }) {
   const isActiveGroup = group.links.some(l => l.to === activePath);
-  const isTourPending = localStorage.getItem('swarmy_tour_completed_v2') !== 'true';
+  const isTourPending = localStorage.getItem('swarmy_tour_completed_v4') !== 'true';
   const [isOpen, setIsOpen] = useState(isActiveGroup || isTourPending);
+
+  useEffect(() => {
+    const handleTour = () => setIsOpen(true);
+    window.addEventListener('start-tour', handleTour);
+    return () => window.removeEventListener('start-tour', handleTour);
+  }, []);
 
   return (
     <div className="nav-group">
