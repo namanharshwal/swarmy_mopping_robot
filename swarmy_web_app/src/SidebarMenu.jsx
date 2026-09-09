@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Rocket, Map, Compass, Navigation, MapPin,
   FolderTree, Network, MonitorUp, FileCode, Gamepad2, Brain, Eye,
-  Server, Settings, Info, ChevronDown, ChevronRight, Menu, X, Wifi, WifiOff, Power, PanelLeftClose
+  Server, Settings, Info, ChevronDown, ChevronRight, Menu, X, Wifi, WifiOff, Power, PanelLeftClose, BookOpen
 } from 'lucide-react';
 
 const MENU_DATA = [
@@ -75,16 +75,19 @@ function NavGroup({ group, activePath, onNavClick }) {
       </div>
       
       <div className={`nav-group-content ${isOpen ? 'open' : ''}`}>
-        {group.links.map(link => (
-          <Link 
-            key={link.to} 
-            to={link.to} 
-            className={`nav-link ${activePath === link.to ? 'active-nav' : ''}`}
-            onClick={onNavClick}
-          >
-            {link.icon} {link.label}
-          </Link>
-        ))}
+        {group.links.map(link => {
+          const tourClass = `tour-${link.label.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+          return (
+            <Link 
+              key={link.to} 
+              to={link.to} 
+              className={`nav-link ${activePath === link.to ? 'active-nav' : ''} ${tourClass}`}
+              onClick={onNavClick}
+            >
+              {link.icon} {link.label}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
