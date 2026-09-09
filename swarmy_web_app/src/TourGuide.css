@@ -62,3 +62,4 @@
   background: #06b6d4 !important;
   box-shadow: 0 0 15px rgba(34, 211, 238, 0.6) !important;
 }
+\n.driver-popover { z-index: 999999 !important; }\n.driver-overlay { z-index: 999998 !important; }

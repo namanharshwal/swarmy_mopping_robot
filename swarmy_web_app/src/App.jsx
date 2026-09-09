@@ -10,7 +10,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { Activity, Menu,  Battery, Cpu, Wifi, WifiOff, Gamepad2, Navigation, AlertTriangle, Settings, FileText, LayoutDashboard, Power, Pause, RefreshCw, Save, Terminal, FolderTree, Network, Info, Play, MapPin, Database, Map, HardDrive, Thermometer, Clock, Globe, Zap, Shield, Eye, Radio, Bot, Rocket, XCircle, CheckCircle, MessageSquare, Send, Brain, MonitorUp, Server, RotateCw, FileCode, Maximize2, Palette, Compass, Mic, Volume2, VolumeX } from 'lucide-react';
+import { Activity, Menu,  Battery, Cpu, Wifi, WifiOff, Gamepad2, Navigation, AlertTriangle, Settings, FileText, LayoutDashboard, Power, Pause, RefreshCw, Save, Terminal, FolderTree, Network, Info, Play, MapPin, Database, Map, HardDrive, Thermometer, Clock, Globe, Zap, Shield, Eye, Radio, Bot, Rocket, XCircle, CheckCircle, MessageSquare, Send, Brain, MonitorUp, Server, RotateCw, FileCode, Maximize2, Palette, Compass, Mic, Volume2, VolumeX, HelpCircle } from 'lucide-react';
 import Login from './Login';
 import nipplejs from 'nipplejs';
 import MatrixBackground from './MatrixBackground';
@@ -74,6 +74,9 @@ function TopBar({ health, onEmergencyStop }) {
       </div>
       
       <div style={{display: 'flex', gap: '8px'}}>
+        <button className="btn-tech tour-help-button" onClick={() => window.dispatchEvent(new Event('start-tour'))}>
+          <HelpCircle size={16} /> HELP
+        </button>
         <button className="btn-tech" onClick={() => window.location.reload()}>
           <RefreshCw size={16} /> REFRESH
         </button>
