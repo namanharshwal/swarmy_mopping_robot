@@ -114,6 +114,7 @@ export default function SwarmyStudio() {
             </button>
           </div>
 
+          <style>{`.react-flow__attribution { display: none !important; }`}</style>
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -124,6 +125,7 @@ export default function SwarmyStudio() {
             onDrop={onDrop}
             onDragOver={onDragOver}
             nodeTypes={nodeTypes}
+            proOptions={{ hideAttribution: true }}
             fitView
             minZoom={0.2}
             maxZoom={4}
