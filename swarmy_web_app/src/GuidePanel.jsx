@@ -31,15 +31,31 @@ const NODE_INFO = [
 ];
 
 const GuideNode = ({ data, selected }) => {
+  const colorClasses = {
+    cyan: 'border-cyan-400 shadow-cyan-500/60 text-cyan-400 bg-cyan-400 shadow-cyan-500',
+    blue: 'border-blue-400 shadow-blue-500/60 text-blue-400 bg-blue-400 shadow-blue-500',
+    indigo: 'border-indigo-400 shadow-indigo-500/60 text-indigo-400 bg-indigo-400 shadow-indigo-500',
+    teal: 'border-teal-400 shadow-teal-500/60 text-teal-400 bg-teal-400 shadow-teal-500',
+    purple: 'border-purple-400 shadow-purple-500/60 text-purple-400 bg-purple-400 shadow-purple-500',
+    fuchsia: 'border-fuchsia-400 shadow-fuchsia-500/60 text-fuchsia-400 bg-fuchsia-400 shadow-fuchsia-500',
+    pink: 'border-pink-400 shadow-pink-500/60 text-pink-400 bg-pink-400 shadow-pink-500',
+    rose: 'border-rose-400 shadow-rose-500/60 text-rose-400 bg-rose-400 shadow-rose-500',
+    amber: 'border-amber-400 shadow-amber-500/60 text-amber-400 bg-amber-400 shadow-amber-500',
+    orange: 'border-orange-400 shadow-orange-500/60 text-orange-400 bg-orange-400 shadow-orange-500',
+    red: 'border-red-400 shadow-red-500/60 text-red-400 bg-red-400 shadow-red-500',
+    slate: 'border-slate-400 shadow-slate-500/60 text-slate-400 bg-slate-400 shadow-slate-500',
+    green: 'border-green-400 shadow-green-500/60 text-green-400 bg-green-400 shadow-green-500'
+  };
+
   return (
-    <div className={`px-4 py-3 rounded-xl border flex items-center gap-4 w-72 backdrop-blur-md transition-all duration-300 shadow-2xl ${selected ? `border-${data.color}-400 shadow-[0_0_25px_var(--tw-shadow-color)] shadow-${data.color}-500/60 scale-105 z-50 bg-[#0a1224]` : 'border-slate-800 bg-[#050810]/95 hover:border-slate-600'}`}>
+    <div className={`px-4 py-3 rounded-xl border flex items-center gap-4 w-72 backdrop-blur-md transition-all duration-300 shadow-2xl ${selected ? `${colorClasses[data.color].split(' ')[0]} shadow-[0_0_25px_var(--tw-shadow-color)] ${colorClasses[data.color].split(' ')[1]} scale-105 z-50 bg-[#0a1224]` : 'border-slate-800 bg-[#050810]/95 hover:border-slate-600'}`}>
       
       {/* Node Input (Left) */}
       {data.id !== 'dashboard' && (
         <Handle type="target" position={Position.Left} className={`w-1 h-6 bg-slate-800 border-none rounded-r-md -ml-5 opacity-0`} />
       )}
       
-      <div className={`flex-shrink-0 p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-${data.color}-400 shadow-[0_0_15px_var(--tw-shadow-color)] shadow-${data.color}-500/30`}>
+      <div className={`flex-shrink-0 p-2.5 rounded-lg bg-slate-950 border border-slate-800 ${colorClasses[data.color].split(' ')[2]} shadow-[0_0_15px_var(--tw-shadow-color)] ${colorClasses[data.color].split(' ')[1].replace('/60', '/30')}`}>
         {data.icon}
       </div>
       
@@ -49,7 +65,7 @@ const GuideNode = ({ data, selected }) => {
       </div>
       
       {/* Node Output (Right) */}
-      <Handle type="source" position={Position.Right} className={`w-2 h-2 bg-${data.color}-400 border-none shadow-[0_0_10px_var(--tw-shadow-color)] shadow-${data.color}-500 -mr-5`} />
+      <Handle type="source" position={Position.Right} className={`w-2 h-2 ${colorClasses[data.color].split(' ')[3]} border-none shadow-[0_0_10px_var(--tw-shadow-color)] ${colorClasses[data.color].split(' ')[4]} -mr-5`} />
     </div>
   );
 };
@@ -171,11 +187,11 @@ export default function GuidePanel() {
             <div 
               key={step.id} 
               ref={(el) => refs.current[step.id] = el}
-              className={`p-6 rounded-2xl border transition-all duration-500 cursor-pointer ${isSelected ? `bg-[#0a1224] border-${step.color}-400 shadow-[0_0_30px_var(--tw-shadow-color)] shadow-${step.color}-500/20` : 'border-slate-800/40 bg-[#080d1a] hover:border-slate-600/50'}`}
+              className={`p-6 rounded-2xl border transition-all duration-500 cursor-pointer ${isSelected ? `bg-[#0a1224] ${step.color === 'cyan' ? 'border-cyan-400 shadow-[0_0_30px_var(--tw-shadow-color)] shadow-cyan-500/20' : step.color === 'blue' ? 'border-blue-400 shadow-[0_0_30px_var(--tw-shadow-color)] shadow-blue-500/20' : step.color === 'indigo' ? 'border-indigo-400 shadow-[0_0_30px_var(--tw-shadow-color)] shadow-indigo-500/20' : step.color === 'teal' ? 'border-teal-400 shadow-[0_0_30px_var(--tw-shadow-color)] shadow-teal-500/20' : step.color === 'purple' ? 'border-purple-400 shadow-[0_0_30px_var(--tw-shadow-color)] shadow-purple-500/20' : step.color === 'fuchsia' ? 'border-fuchsia-400 shadow-[0_0_30px_var(--tw-shadow-color)] shadow-fuchsia-500/20' : step.color === 'pink' ? 'border-pink-400 shadow-[0_0_30px_var(--tw-shadow-color)] shadow-pink-500/20' : step.color === 'rose' ? 'border-rose-400 shadow-[0_0_30px_var(--tw-shadow-color)] shadow-rose-500/20' : step.color === 'amber' ? 'border-amber-400 shadow-[0_0_30px_var(--tw-shadow-color)] shadow-amber-500/20' : step.color === 'orange' ? 'border-orange-400 shadow-[0_0_30px_var(--tw-shadow-color)] shadow-orange-500/20' : step.color === 'red' ? 'border-red-400 shadow-[0_0_30px_var(--tw-shadow-color)] shadow-red-500/20' : step.color === 'green' ? 'border-green-400 shadow-[0_0_30px_var(--tw-shadow-color)] shadow-green-500/20' : 'border-slate-400 shadow-[0_0_30px_var(--tw-shadow-color)] shadow-slate-500/20'}` : 'border-slate-800/40 bg-[#080d1a] hover:border-slate-600/50'}`}
               onClick={() => setSelectedId(step.id)}
             >
               <div className="flex items-start gap-5">
-                <div className={`p-4 rounded-xl bg-[#03050a] border ${isSelected ? `border-${step.color}-400 text-${step.color}-400 shadow-[0_0_15px_var(--tw-shadow-color)] shadow-${step.color}-500/40` : 'border-slate-800 text-slate-500'}`}>
+                <div className={`p-4 rounded-xl bg-[#03050a] border ${isSelected ? `${step.color === 'cyan' ? 'border-cyan-400 text-cyan-400 shadow-[0_0_15px_var(--tw-shadow-color)] shadow-cyan-500/40' : step.color === 'blue' ? 'border-blue-400 text-blue-400 shadow-[0_0_15px_var(--tw-shadow-color)] shadow-blue-500/40' : step.color === 'indigo' ? 'border-indigo-400 text-indigo-400 shadow-[0_0_15px_var(--tw-shadow-color)] shadow-indigo-500/40' : step.color === 'teal' ? 'border-teal-400 text-teal-400 shadow-[0_0_15px_var(--tw-shadow-color)] shadow-teal-500/40' : step.color === 'purple' ? 'border-purple-400 text-purple-400 shadow-[0_0_15px_var(--tw-shadow-color)] shadow-purple-500/40' : step.color === 'fuchsia' ? 'border-fuchsia-400 text-fuchsia-400 shadow-[0_0_15px_var(--tw-shadow-color)] shadow-fuchsia-500/40' : step.color === 'pink' ? 'border-pink-400 text-pink-400 shadow-[0_0_15px_var(--tw-shadow-color)] shadow-pink-500/40' : step.color === 'rose' ? 'border-rose-400 text-rose-400 shadow-[0_0_15px_var(--tw-shadow-color)] shadow-rose-500/40' : step.color === 'amber' ? 'border-amber-400 text-amber-400 shadow-[0_0_15px_var(--tw-shadow-color)] shadow-amber-500/40' : step.color === 'orange' ? 'border-orange-400 text-orange-400 shadow-[0_0_15px_var(--tw-shadow-color)] shadow-orange-500/40' : step.color === 'red' ? 'border-red-400 text-red-400 shadow-[0_0_15px_var(--tw-shadow-color)] shadow-red-500/40' : step.color === 'green' ? 'border-green-400 text-green-400 shadow-[0_0_15px_var(--tw-shadow-color)] shadow-green-500/40' : 'border-slate-400 text-slate-400 shadow-[0_0_15px_var(--tw-shadow-color)] shadow-slate-500/40'}` : 'border-slate-800 text-slate-500'}`}>
                   {step.icon}
                 </div>
                 <div>
