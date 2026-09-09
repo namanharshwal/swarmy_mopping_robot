@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { 
   Settings, CheckCircle, Navigation, Anchor, Volume2, Cpu, Smile, GitBranch, 
   LogOut, Route, Timer, ArrowUpFromLine, ArrowDownToLine, ToggleRight, 
-  Activity, Webhook, Mail, Repeat, PauseCircle, Network, StopCircle, Music, Radio
+  Activity, Webhook, Mail, Repeat, PauseCircle, Network, StopCircle, Music, Radio,
+  ArrowLeft, Save
 } from 'lucide-react';
 
-export default function Sidebar() {
+export default function Sidebar({ selectedNode, setSelectedNode, updateNodeData }) {
   const [activeTab, setActiveTab] = useState('Tasks');
 
   const onDragStart = (event, nodeType, label, subline) => {
@@ -17,6 +18,113 @@ export default function Sidebar() {
 
   const tabs = ['Tasks', 'Actions', 'Widgets'];
 
+  // Handle configuration changes
+  const handleConfigChange = (key, value) => {
+    const currentConfig = selectedNode.data.config || {};
+    updateNodeData(selectedNode.id, {
+      config: { ...currentConfig, [key]: value }
+    });
+  };
+
+  const handleSublineChange = (e) => {
+    updateNodeData(selectedNode.id, { subline: e.target.value });
+  };
+
+  if (selectedNode && selectedNode.type !== 'input') {
+    return (
+      <aside style={{ width: '340px', background: 'rgba(10, 15, 25, 0.95)', borderLeft: '1px solid #1e293b', display: 'flex', flexDirection: 'column', fontFamily: '"Rajdhani", sans-serif', backdropFilter: 'blur(10px)', color: '#e2e8f0' }}>
+        <div style={{ padding: '24px 20px', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button onClick={() => setSelectedNode(null)} style={{ background: 'transparent', border: 'none', color: '#22d3ee', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}>
+            <ArrowLeft size={24} />
+          </button>
+          <div>
+            <h2 style={{ color: '#fff', margin: '0 0 4px 0', fontSize: '20px', fontWeight: '600', letterSpacing: '1px' }}>PROPERTIES</h2>
+            <p style={{ color: '#22d3ee', fontSize: '14px', margin: 0, fontWeight: 'bold' }}>{selectedNode.data.label}</p>
+          </div>
+        </div>
+
+        <div style={{ padding: '20px', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontSize: '13px', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.5px' }}>DISPLAY NAME / SUBLINE</label>
+            <input 
+              type="text" 
+              value={selectedNode.data.subline || ''} 
+              onChange={handleSublineChange}
+              style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid #334155', borderRadius: '6px', padding: '10px 12px', color: '#fff', fontFamily: 'inherit', fontSize: '14px' }}
+              placeholder="e.g. Navigation"
+            />
+          </div>
+
+          <div style={{ height: '1px', background: '#1e293b', margin: '10px 0' }}></div>
+
+          {/* Dynamic Configuration Fields based on label */}
+          {selectedNode.data.label === 'go_to_place' && (
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '13px', color: '#94a3b8', fontWeight: '600' }}>WAYPOINT NAME</label>
+                <input type="text" value={selectedNode.data.config?.waypoint || ''} onChange={(e) => handleConfigChange('waypoint', e.target.value)} style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid #334155', borderRadius: '6px', padding: '10px 12px', color: '#fff' }} placeholder="e.g. Station_1" />
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                  <label style={{ fontSize: '13px', color: '#94a3b8', fontWeight: '600' }}>X (Meters)</label>
+                  <input type="number" step="0.1" value={selectedNode.data.config?.x || ''} onChange={(e) => handleConfigChange('x', parseFloat(e.target.value))} style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid #334155', borderRadius: '6px', padding: '10px 12px', color: '#fff' }} placeholder="0.0" />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                  <label style={{ fontSize: '13px', color: '#94a3b8', fontWeight: '600' }}>Y (Meters)</label>
+                  <input type="number" step="0.1" value={selectedNode.data.config?.y || ''} onChange={(e) => handleConfigChange('y', parseFloat(e.target.value))} style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid #334155', borderRadius: '6px', padding: '10px 12px', color: '#fff' }} placeholder="0.0" />
+                </div>
+              </div>
+            </>
+          )}
+
+          {selectedNode.data.label === 'announce' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '13px', color: '#94a3b8', fontWeight: '600' }}>SPEECH TEXT</label>
+              <textarea value={selectedNode.data.config?.text || ''} onChange={(e) => handleConfigChange('text', e.target.value)} style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid #334155', borderRadius: '6px', padding: '10px 12px', color: '#fff', minHeight: '80px', fontFamily: 'inherit' }} placeholder="Hello, I am arriving..." />
+            </div>
+          )}
+
+          {(selectedNode.data.label === 'LocationAck' || selectedNode.data.label === 'ConveyorUnlock') && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '13px', color: '#94a3b8', fontWeight: '600' }}>PLC REGISTER ID</label>
+              <input type="number" value={selectedNode.data.config?.register || ''} onChange={(e) => handleConfigChange('register', parseInt(e.target.value, 10))} style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid #334155', borderRadius: '6px', padding: '10px 12px', color: '#fff' }} placeholder="e.g. 4001" />
+            </div>
+          )}
+
+          {selectedNode.data.label === 'wait_time' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label style={{ fontSize: '13px', color: '#94a3b8', fontWeight: '600' }}>DURATION (SECONDS)</label>
+              <input type="number" value={selectedNode.data.config?.duration || ''} onChange={(e) => handleConfigChange('duration', parseInt(e.target.value, 10))} style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid #334155', borderRadius: '6px', padding: '10px 12px', color: '#fff' }} placeholder="5" />
+            </div>
+          )}
+
+          {selectedNode.data.label === 'call_rest_api' && (
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '13px', color: '#94a3b8', fontWeight: '600' }}>ENDPOINT URL</label>
+                <input type="text" value={selectedNode.data.config?.url || ''} onChange={(e) => handleConfigChange('url', e.target.value)} style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid #334155', borderRadius: '6px', padding: '10px 12px', color: '#fff' }} placeholder="https://api.factory.local/v1/trigger" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '13px', color: '#94a3b8', fontWeight: '600' }}>JSON PAYLOAD</label>
+                <textarea value={selectedNode.data.config?.payload || ''} onChange={(e) => handleConfigChange('payload', e.target.value)} style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid #334155', borderRadius: '6px', padding: '10px 12px', color: '#fff', minHeight: '80px', fontFamily: 'monospace' }} placeholder='{"status": "arrived"}' />
+              </div>
+            </>
+          )}
+
+          {/* Catch-all for other nodes */}
+          {!['go_to_place', 'announce', 'LocationAck', 'ConveyorUnlock', 'wait_time', 'call_rest_api'].includes(selectedNode.data.label) && (
+            <div style={{ padding: '20px', background: 'rgba(34, 211, 238, 0.05)', border: '1px dashed #22d3ee', borderRadius: '8px', textAlign: 'center', color: '#94a3b8' }}>
+              No advanced configuration required for this block.
+            </div>
+          )}
+
+        </div>
+      </aside>
+    );
+  }
+
+  // --- LIBRARY RENDER ---
   return (
     <aside style={{ width: '340px', background: 'rgba(10, 15, 25, 0.95)', borderLeft: '1px solid #1e293b', display: 'flex', flexDirection: 'column', fontFamily: '"Rajdhani", sans-serif', backdropFilter: 'blur(10px)' }}>
       

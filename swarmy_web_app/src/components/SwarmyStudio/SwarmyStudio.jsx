@@ -48,11 +48,12 @@ export default function SwarmyStudio() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
+  const [selectedNode, setSelectedNode] = useState(null);
 
   const onConnect = useCallback((params) => {
-    let edgeColor = '#94a3b8'; // Default neutral
-    if(params.sourceHandle === 'success') edgeColor = '#10b981'; // Green for success
-    if(params.sourceHandle === 'failure') edgeColor = '#ef4444'; // Red for failure
+    let edgeColor = '#94a3b8';
+    if(params.sourceHandle === 'success') edgeColor = '#10b981';
+    if(params.sourceHandle === 'failure') edgeColor = '#ef4444';
     
     setEdges((eds) => addEdge({ 
       ...params, 
@@ -92,13 +93,39 @@ export default function SwarmyStudio() {
         id: getId(),
         type,
         position,
-        data: { label, subline },
+        data: { label, subline, config: {} },
       };
 
       setNodes((nds) => nds.concat(newNode));
     },
     [reactFlowInstance, setNodes]
   );
+
+  const onNodeClick = useCallback((event, node) => {
+    setSelectedNode(node);
+  }, []);
+
+  const onPaneClick = useCallback(() => {
+    setSelectedNode(null);
+  }, []);
+
+  const updateNodeData = useCallback((nodeId, newData) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === nodeId) {
+          return { ...node, data: { ...node.data, ...newData } };
+        }
+        return node;
+      })
+    );
+    // Also update selectedNode state so the panel reflects changes instantly
+    setSelectedNode((prev) => {
+      if (prev && prev.id === nodeId) {
+        return { ...prev, data: { ...prev.data, ...newData } };
+      }
+      return prev;
+    });
+  }, [setNodes]);
 
   return (
     <div style={{ display: 'flex', height: 'calc(100vh - 60px)', background: 'transparent', fontFamily: '"Rajdhani", sans-serif' }}>
@@ -124,6 +151,8 @@ export default function SwarmyStudio() {
             onInit={setReactFlowInstance}
             onDrop={onDrop}
             onDragOver={onDragOver}
+            onNodeClick={onNodeClick}
+            onPaneClick={onPaneClick}
             nodeTypes={nodeTypes}
             proOptions={{ hideAttribution: true }}
             fitView
@@ -135,7 +164,11 @@ export default function SwarmyStudio() {
           </ReactFlow>
           
         </div>
-        <Sidebar />
+        <Sidebar 
+          selectedNode={selectedNode} 
+          setSelectedNode={setSelectedNode} 
+          updateNodeData={updateNodeData} 
+        />
       </ReactFlowProvider>
     </div>
   );
