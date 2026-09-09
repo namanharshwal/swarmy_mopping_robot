@@ -1,237 +1,166 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MonitorSmartphone, Server, Database, Cpu, Activity, ArrowRight, Zap, Network, ShieldCheck } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+import ReactFlow, { Background, Controls, MarkerType, useNodesState, useEdgesState, Handle, Position } from 'reactflow';
+import 'reactflow/dist/style.css';
+import { MonitorSmartphone, Server, Database, Cpu, Network, Brain, PlayCircle, ShieldCheck, Zap } from 'lucide-react';
 
-const FLOW_STAGES = [
-  {
-    id: 0,
-    title: 'COMMAND INTERFACE',
-    subtitle: 'React UI & AI Voice Core',
-    desc: 'The human entry point. You interact via the Swarmy Dashboard, dragging visual nodes in Swarmy Studio, or speaking naturally to the AI. This layer parses your intent into structured JSON payloads.',
-    icon: <MonitorSmartphone size={32} />,
-    color: 'cyan',
-    glow: 'shadow-[0_0_40px_rgba(34,211,238,0.6)]',
-    text: 'text-cyan-400',
-    border: 'border-cyan-500',
-    gradient: 'from-cyan-950/80 to-slate-900',
-    layerZ: 150
+// NODE INFO DIRECTORY
+const NODE_INFO = {
+  'dashboard': {
+    title: 'Dashboard (React UI)',
+    desc: 'The main user interface. It communicates via WebSocket to receive live telemetry (CPU, RAM, Battery) from the robot and sends manual teleop commands.',
+    icon: <MonitorSmartphone className="text-blue-400" size={40} />
   },
-  {
-    id: 1,
-    title: 'MIDDLEWARE ENGINE',
-    subtitle: 'Node.js & OPC UA',
-    desc: 'The nervous system. It receives JSON payloads via WebSocket, translates them into industrial OPC UA tags for PLCs, and bridges the data directly into the ROS environment at high frequency.',
-    icon: <Server size={32} />,
-    color: 'purple',
-    glow: 'shadow-[0_0_40px_rgba(168,85,247,0.6)]',
-    text: 'text-purple-400',
-    border: 'border-purple-500',
-    gradient: 'from-purple-950/80 to-slate-900',
-    layerZ: 75
+  'studio': {
+    title: 'Swarmy Studio',
+    desc: 'A visual state machine builder. You drag and drop tasks, which are compiled into a JSON workflow file and sent to the Node.js API to execute autonomous missions.',
+    icon: <Network className="text-purple-400" size={40} />
   },
-  {
-    id: 2,
-    title: 'ROS CORE ENGINE',
-    subtitle: 'ROS Melodic Navigation Stack',
-    desc: 'The algorithmic center. ROS computes inverse kinematics, generates localized costmaps using SLAM (LiDAR + Ultrasonic), and charts a collision-free path for the robot chassis.',
-    icon: <Database size={32} />,
-    color: 'green',
-    glow: 'shadow-[0_0_40px_rgba(34,197,94,0.6)]',
-    text: 'text-green-400',
-    border: 'border-green-500',
-    gradient: 'from-green-950/80 to-slate-900',
-    layerZ: 0
+  'ai': {
+    title: 'AI Assistant',
+    desc: 'The voice interface. Transcribes speech, processes it through a local LLM, and triggers robot emotions or executes ROS physical commands.',
+    icon: <Brain className="text-amber-400" size={40} />
   },
-  {
-    id: 3,
-    title: 'PHYSICAL ACTUATION',
-    subtitle: 'Jetson Nano + Motor Controllers',
-    desc: 'The physical edge. The Jetson Nano processes LiDAR point clouds in real-time and transmits velocity vectors (cmd_vel) via serial to the Arduino, which physically spins the motor encoders.',
-    icon: <Cpu size={32} />,
-    color: 'amber',
-    glow: 'shadow-[0_0_40px_rgba(245,158,11,0.6)]',
-    text: 'text-amber-400',
-    border: 'border-amber-500',
-    gradient: 'from-amber-950/80 to-slate-900',
-    layerZ: -75
+  'api': {
+    title: 'Node.js Middleware',
+    desc: 'The central hub. It parses web requests, manages the SQLite database, and acts as a bridge communicating with ROS via rosbridge_websocket.',
+    icon: <Server className="text-indigo-400" size={40} />
+  },
+  'opcua': {
+    title: 'OPC UA Interface',
+    desc: 'Industrial protocol bridge. It allows factory PLCs (Siemens, Allen Bradley) to trigger Swarmy workflows remotely using standard industrial tags.',
+    icon: <ShieldCheck className="text-pink-400" size={40} />
+  },
+  'ros': {
+    title: 'ROS Core Engine',
+    desc: 'The Robot Operating System. Runs the Navigation Stack (move_base), SLAM mapping, and calculates velocity commands to avoid obstacles.',
+    icon: <Database className="text-green-400" size={40} />
+  },
+  'hardware': {
+    title: 'Physical Hardware',
+    desc: 'Jetson Nano receives cmd_vel topics from ROS and sends serial PWM signals to the Arduino Mega, which actuates the servo motors and reads LiDAR data.',
+    icon: <Cpu className="text-rose-400" size={40} />
   }
+};
+
+// CUSTOM NODE COMPONENT
+const SystemNode = ({ data, selected }) => {
+  return (
+    <div className={`px-4 py-3 shadow-2xl rounded-xl border-2 bg-slate-900/90 backdrop-blur-sm flex flex-col items-center justify-center text-center w-52 transition-all duration-300 ${selected ? 'border-cyan-400 shadow-[0_0_20px_#22d3ee] scale-105' : 'border-slate-700 hover:border-slate-500'}`}>
+      <Handle type="target" position={Position.Top} className="w-3 h-3 bg-slate-500" />
+      
+      <div className={`p-3 rounded-full mb-2 border border-slate-700 ${data.colorClass}`}>
+        {data.icon}
+      </div>
+      <div className="font-bold text-white font-['Rajdhani'] tracking-widest">{data.label}</div>
+      <div className="text-xs text-slate-400 mt-1 uppercase tracking-widest">{data.sub}</div>
+      
+      <Handle type="source" position={Position.Bottom} className="w-3 h-3 bg-slate-500" />
+    </div>
+  );
+};
+
+const initialNodes = [
+  // UI Layer
+  { id: 'dashboard', type: 'systemNode', position: { x: 50, y: 50 }, data: { label: 'DASHBOARD', sub: 'React Web UI', colorClass: 'bg-blue-950 text-blue-400', icon: <MonitorSmartphone size={24} /> } },
+  { id: 'studio', type: 'systemNode', position: { x: 300, y: 50 }, data: { label: 'SWARMY STUDIO', sub: 'Visual Logic', colorClass: 'bg-purple-950 text-purple-400', icon: <Network size={24} /> } },
+  { id: 'ai', type: 'systemNode', position: { x: 550, y: 50 }, data: { label: 'AI ASSISTANT', sub: 'Voice NLP', colorClass: 'bg-amber-950 text-amber-400', icon: <Brain size={24} /> } },
+  
+  // Middleware Layer
+  { id: 'api', type: 'systemNode', position: { x: 175, y: 250 }, data: { label: 'NODE.JS API', sub: 'Express / WS', colorClass: 'bg-indigo-950 text-indigo-400', icon: <Server size={24} /> } },
+  { id: 'opcua', type: 'systemNode', position: { x: 425, y: 250 }, data: { label: 'OPC UA SERVER', sub: 'PLC Bridge', colorClass: 'bg-pink-950 text-pink-400', icon: <ShieldCheck size={24} /> } },
+
+  // ROS Layer
+  { id: 'ros', type: 'systemNode', position: { x: 300, y: 450 }, data: { label: 'ROS CORE', sub: 'Navigation Stack', colorClass: 'bg-green-950 text-green-400', icon: <Database size={24} /> } },
+
+  // Hardware Layer
+  { id: 'hardware', type: 'systemNode', position: { x: 300, y: 650 }, data: { label: 'HARDWARE EDGE', sub: 'Jetson & Arduino', colorClass: 'bg-rose-950 text-rose-400', icon: <Cpu size={24} /> } }
+];
+
+const initialEdges = [
+  { id: 'e-dash-api', source: 'dashboard', target: 'api', animated: true, style: { stroke: '#60a5fa', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#60a5fa' } },
+  { id: 'e-studio-api', source: 'studio', target: 'api', animated: true, style: { stroke: '#c084fc', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#c084fc' } },
+  { id: 'e-ai-api', source: 'ai', target: 'api', animated: true, style: { stroke: '#fbbf24', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#fbbf24' } },
+  
+  { id: 'e-api-ros', source: 'api', target: 'ros', animated: true, style: { stroke: '#818cf8', strokeWidth: 3 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#818cf8' } },
+  
+  { id: 'e-studio-opcua', source: 'studio', target: 'opcua', animated: true, style: { stroke: '#f472b6', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#f472b6' } },
+  { id: 'e-opcua-ros', source: 'opcua', target: 'ros', animated: true, style: { stroke: '#f472b6', strokeWidth: 3 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#f472b6' } },
+
+  { id: 'e-ros-hardware', source: 'ros', target: 'hardware', animated: true, style: { stroke: '#4ade80', strokeWidth: 4 }, markerEnd: { type: MarkerType.ArrowClosed, color: '#4ade80' } }
 ];
 
 export default function GuidePanel() {
-  const [activeLayer, setActiveLayer] = useState(0);
-  const [autoPlay, setAutoPlay] = useState(true);
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [selectedNode, setSelectedNode] = useState(null);
 
-  // Auto-play the data flow animation
-  useEffect(() => {
-    if (!autoPlay) return;
-    const interval = setInterval(() => {
-      setActiveLayer((prev) => (prev + 1) % FLOW_STAGES.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [autoPlay]);
+  const nodeTypes = useMemo(() => ({ systemNode: SystemNode }), []);
+
+  const onNodeClick = useCallback((event, node) => {
+    setSelectedNode(NODE_INFO[node.id]);
+  }, []);
+
+  const onPaneClick = useCallback(() => {
+    setSelectedNode(null);
+  }, []);
 
   return (
-    <div className="flex flex-col h-full bg-[#050810] text-slate-300 font-['Rajdhani'] overflow-hidden">
+    <div className="flex h-full bg-[#050810] text-slate-300 font-['Rajdhani']">
       
-      {/* Header */}
-      <div className="p-6 border-b border-slate-800/80 bg-slate-950/50 flex justify-between items-center z-10 relative">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-1 flex items-center tracking-widest">
-            <Zap className="mr-3 text-cyan-400" size={28} /> SWARMY OS <span className="text-slate-500 ml-2">|| DATA PIPELINE</span>
+      {/* LEFT: Flowchart Canvas */}
+      <div className="flex-1 relative h-full">
+        <div className="absolute top-6 left-6 z-10 bg-slate-950/80 p-4 rounded-xl border border-slate-800 shadow-xl backdrop-blur-md">
+          <h1 className="text-2xl font-bold text-white flex items-center tracking-widest">
+            <Zap className="mr-3 text-cyan-400" size={24} /> SYSTEM FLOWCHART
           </h1>
-          <p className="text-slate-400 text-sm uppercase tracking-widest">Interactive Robotic Data Flow & Architecture Simulator</p>
+          <p className="text-slate-400 text-sm mt-1">Interactive System Architecture Map</p>
         </div>
-        <button 
-          onClick={() => setAutoPlay(!autoPlay)}
-          className={`px-4 py-2 border rounded-lg text-sm font-bold tracking-widest transition-all ${autoPlay ? 'border-cyan-500 text-cyan-400 bg-cyan-500/10 shadow-[0_0_15px_rgba(34,211,238,0.2)]' : 'border-slate-600 text-slate-500'}`}
-        >
-          {autoPlay ? 'AUTOPLAY: ON' : 'AUTOPLAY: OFF'}
-        </button>
-      </div>
-
-      <div className="flex-1 grid grid-cols-1 xl:grid-cols-2 gap-0 relative">
         
-        {/* LEFT PANEL: Interactive Data Flow Timeline */}
-        <div className="p-8 flex flex-col justify-center border-r border-slate-800/50 bg-[radial-gradient(ellipse_at_left,_var(--tw-gradient-stops))] from-slate-900 to-[#050810]">
-          <div className="space-y-6 relative max-w-xl mx-auto w-full">
-            
-            {/* Connecting Vertical Line */}
-            <div className="absolute left-[39px] top-10 bottom-10 w-1 bg-slate-800 rounded-full">
-              {/* Animated Data Packet */}
-              <motion.div 
-                className={`absolute left-0 w-full bg-${FLOW_STAGES[activeLayer].color}-500 shadow-[0_0_10px_currentColor]`}
-                animate={{ 
-                  top: `${(activeLayer / (FLOW_STAGES.length - 1)) * 100}%`,
-                  height: activeLayer === FLOW_STAGES.length - 1 ? '0%' : '20%'
-                }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
-              />
-            </div>
-
-            {FLOW_STAGES.map((stage, idx) => {
-              const isActive = activeLayer === idx;
-              return (
-                <div 
-                  key={stage.id}
-                  onClick={() => { setActiveLayer(idx); setAutoPlay(false); }}
-                  className={`relative flex items-start gap-6 p-4 rounded-2xl cursor-pointer transition-all duration-300 ${isActive ? `bg-gradient-to-r ${stage.gradient} border ${stage.border}` : 'hover:bg-slate-900/50 border border-transparent'}`}
-                >
-                  {/* Icon Node */}
-                  <div className={`relative z-10 w-12 h-12 flex items-center justify-center rounded-xl bg-slate-900 border transition-all duration-500 ${isActive ? `${stage.border} ${stage.text} ${stage.glow} scale-110` : 'border-slate-700 text-slate-500'}`}>
-                    {stage.icon}
-                  </div>
-
-                  {/* Text Content */}
-                  <div className="flex-1">
-                    <h3 className={`text-xl font-bold tracking-widest transition-colors duration-300 ${isActive ? 'text-white' : 'text-slate-500'}`}>
-                      {stage.title}
-                    </h3>
-                    <h4 className={`text-sm tracking-widest uppercase mb-2 ${isActive ? stage.text : 'text-slate-600'}`}>
-                      {stage.subtitle}
-                    </h4>
-                    
-                    <AnimatePresence>
-                      {isActive && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="overflow-hidden"
-                        >
-                          <p className="text-slate-300 text-[15px] leading-relaxed mt-2 border-l-2 border-slate-700 pl-4 py-1">
-                            {stage.desc}
-                          </p>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* RIGHT PANEL: Exploded 3D Isometric View */}
-        <div className="relative flex items-center justify-center bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900 to-[#020408] overflow-hidden perspective-[1200px]">
-          
-          {/* Animated Background Grid */}
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#22d3ee 1px, transparent 1px), linear-gradient(90deg, #22d3ee 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-
-          {/* ISOMETRIC CONTAINER */}
-          <div className="relative w-[340px] h-[450px] transform-style-preserve-3d transition-transform duration-700 ease-out" 
-               style={{ transformStyle: 'preserve-3d', transform: 'rotateX(55deg) rotateZ(-40deg)' }}>
-            
-            {/* Layer 4: Client App */}
-            <div className={`absolute top-0 left-0 w-full h-[120px] backdrop-blur-md rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-700
-              ${activeLayer === 0 ? 'bg-cyan-900/60 border-2 border-cyan-400 shadow-[0_0_60px_rgba(34,211,238,0.5)] opacity-100 z-50' : 'bg-cyan-950/20 border border-cyan-800/50 opacity-40 z-10'}`}
-              style={{ transform: `translateZ(${activeLayer === 0 ? 180 : 150}px)` }}
-              onClick={() => { setActiveLayer(0); setAutoPlay(false); }}
-            >
-              <MonitorSmartphone size={32} className={`mb-2 ${activeLayer === 0 ? 'text-cyan-300' : 'text-cyan-700'}`} />
-              <span className={`font-bold tracking-widest ${activeLayer === 0 ? 'text-cyan-50' : 'text-cyan-800'}`}>WEB & AI</span>
-            </div>
-            
-            {/* Data Stream Wire 1 */}
-            <div className={`absolute left-1/2 top-[120px] w-1.5 h-[40px] -translate-x-1/2 transition-colors duration-500
-              ${activeLayer === 0 || activeLayer === 1 ? 'bg-gradient-to-b from-cyan-400 to-purple-500 shadow-[0_0_10px_#22d3ee]' : 'bg-slate-800'}`} 
-              style={{ transform: 'translateZ(110px)' }}></div>
-
-            {/* Layer 3: Backend Node.js */}
-            <div className={`absolute top-[160px] left-[-20px] w-[380px] h-[120px] backdrop-blur-md rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-700
-              ${activeLayer === 1 ? 'bg-purple-900/60 border-2 border-purple-400 shadow-[0_0_60px_rgba(168,85,247,0.5)] opacity-100 z-40' : 'bg-purple-950/20 border border-purple-800/50 opacity-40 z-20'}`}
-              style={{ transform: `translateZ(${activeLayer === 1 ? 105 : 75}px)` }}
-              onClick={() => { setActiveLayer(1); setAutoPlay(false); }}
-            >
-              <div className="flex gap-8 mb-2">
-                <Server size={28} className={activeLayer === 1 ? 'text-purple-300' : 'text-purple-700'} />
-                <Network size={28} className={activeLayer === 1 ? 'text-purple-300' : 'text-purple-700'} />
-              </div>
-              <span className={`font-bold tracking-widest ${activeLayer === 1 ? 'text-purple-50' : 'text-purple-800'}`}>MIDDLEWARE (NODE.JS)</span>
-            </div>
-
-            {/* Data Stream Wire 2 */}
-            <div className={`absolute left-1/2 top-[280px] w-1.5 h-[40px] -translate-x-1/2 transition-colors duration-500
-              ${activeLayer === 1 || activeLayer === 2 ? 'bg-gradient-to-b from-purple-400 to-green-500 shadow-[0_0_10px_#a855f7]' : 'bg-slate-800'}`} 
-              style={{ transform: 'translateZ(35px)' }}></div>
-
-            {/* Layer 2: ROS Core */}
-            <div className={`absolute top-[320px] left-0 w-full h-[120px] backdrop-blur-md rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-700
-              ${activeLayer === 2 ? 'bg-green-900/60 border-2 border-green-400 shadow-[0_0_60px_rgba(34,197,94,0.5)] opacity-100 z-30' : 'bg-green-950/20 border border-green-800/50 opacity-40 z-30'}`}
-              style={{ transform: `translateZ(${activeLayer === 2 ? 30 : 0}px)` }}
-              onClick={() => { setActiveLayer(2); setAutoPlay(false); }}
-            >
-              <Database size={32} className={`mb-2 ${activeLayer === 2 ? 'text-green-300' : 'text-green-700'}`} />
-              <span className={`font-bold tracking-widest ${activeLayer === 2 ? 'text-green-50' : 'text-green-800'}`}>ROS CORE</span>
-            </div>
-
-            {/* Data Stream Wire 3 */}
-            <div className={`absolute left-1/2 top-[440px] w-1.5 h-[40px] -translate-x-1/2 transition-colors duration-500
-              ${activeLayer === 2 || activeLayer === 3 ? 'bg-gradient-to-b from-green-400 to-amber-500 shadow-[0_0_10px_#22c55e]' : 'bg-slate-800'}`} 
-              style={{ transform: 'translateZ(-40px)' }}></div>
-
-            {/* Layer 1: Hardware Base */}
-            <div className={`absolute top-[480px] left-[-40px] w-[420px] h-[140px] bg-slate-900/80 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-700
-              ${activeLayer === 3 ? 'border-2 border-amber-400 shadow-[0_20px_70px_rgba(245,158,11,0.5)] opacity-100 z-20' : 'border border-slate-700 opacity-60 z-40'}`}
-              style={{ transform: `translateZ(${activeLayer === 3 ? -45 : -75}px)` }}
-              onClick={() => { setActiveLayer(3); setAutoPlay(false); }}
-            >
-              <div className="flex gap-10 mb-2">
-                <Cpu size={32} className={activeLayer === 3 ? 'text-amber-300' : 'text-slate-600'} />
-                <Activity size={32} className={activeLayer === 3 ? 'text-amber-300' : 'text-slate-600'} />
-                <ShieldCheck size={32} className={activeLayer === 3 ? 'text-amber-300' : 'text-slate-600'} />
-              </div>
-              <span className={`font-bold tracking-widest mt-2 ${activeLayer === 3 ? 'text-amber-50' : 'text-slate-500'}`}>PHYSICAL HARDWARE</span>
-            </div>
-
-          </div>
-          
-          {/* Action indicator at bottom */}
-          <div className="absolute bottom-8 text-center animate-bounce text-slate-500 text-sm tracking-widest">
-            CLICK ANY LAYER TO EXPLORE
-          </div>
-        </div>
-
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onNodeClick={onNodeClick}
+          onPaneClick={onPaneClick}
+          nodeTypes={nodeTypes}
+          fitView
+          fitViewOptions={{ padding: 0.2 }}
+          className="bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 to-[#050810]"
+        >
+          <Background color="#334155" gap={20} size={1} />
+          <Controls className="bg-slate-900 border-slate-700 fill-cyan-400" />
+        </ReactFlow>
       </div>
+
+      {/* RIGHT: Detail Panel */}
+      <div className="w-[400px] border-l border-slate-800 bg-slate-950 p-8 flex flex-col relative overflow-hidden">
+        {selectedNode ? (
+          <div className="animate-fade-in relative z-10">
+            <div className="mb-6">
+              {selectedNode.icon}
+            </div>
+            <h2 className="text-3xl font-bold text-white tracking-widest mb-4 border-b border-slate-800 pb-4">
+              {selectedNode.title}
+            </h2>
+            <p className="text-slate-400 text-lg leading-relaxed">
+              {selectedNode.desc}
+            </p>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center text-center opacity-50 relative z-10">
+            <PlayCircle size={64} className="text-slate-600 mb-4" />
+            <p className="text-xl tracking-widest text-slate-500 font-bold">CLICK ANY NODE</p>
+            <p className="text-slate-500 mt-2">to view system flow details</p>
+          </div>
+        )}
+        
+        {/* Background Decorative Graphic */}
+        <div className="absolute bottom-0 right-0 opacity-5 pointer-events-none">
+          <Network size={300} />
+        </div>
+      </div>
+
     </div>
   );
 }
