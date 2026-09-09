@@ -2559,7 +2559,9 @@ function App() {
 
   return (
     <Router>
-      <TourGuide />
+      <ErrorBoundary>
+        <TourGuide />
+      </ErrorBoundary>
       <MatrixBackground />
       <div className="hexa-layout">
         <div className="cursor-glow" />
