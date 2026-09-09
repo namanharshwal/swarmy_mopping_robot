@@ -1083,6 +1083,40 @@ app.post('/api/opcua/stop', (req, res) => {
     }
 });
 
+// --- OPC UA CLIENT ENDPOINTS ---
+app.get('/api/opcua/client/read', (req, res) => {
+    const { exec } = require('child_process');
+    const path = require('path');
+    const scriptPath = path.join(__dirname, 'opcua_client.py');
+    exec(`python3 ${scriptPath}`, (err, stdout, stderr) => {
+        if (err) return res.status(500).json({ error: stderr || err.message });
+        res.json({ output: stdout });
+    });
+});
+
+app.post('/api/opcua/client/move', (req, res) => {
+    const { x, y } = req.body;
+    const { exec } = require('child_process');
+    const path = require('path');
+    const scriptPath = path.join(__dirname, 'opcua_client.py');
+    exec(`python3 ${scriptPath} --move ${x} ${y}`, (err, stdout, stderr) => {
+        if (err) return res.status(500).json({ error: stderr || err.message });
+        res.json({ output: stdout });
+    });
+});
+
+app.post('/api/opcua/client/task', (req, res) => {
+    const { task } = req.body;
+    const { exec } = require('child_process');
+    const path = require('path');
+    const scriptPath = path.join(__dirname, 'opcua_client.py');
+    exec(`python3 ${scriptPath} --task "${task}"`, (err, stdout, stderr) => {
+        if (err) return res.status(500).json({ error: stderr || err.message });
+        res.json({ output: stdout });
+    });
+});
+
+
 app.use(express.static('/home/swarmy_bot/swarmy_ws/src/swarmy_web_app/dist'));
 
 // Fallback for React Router (SPA)
@@ -1101,4 +1135,30 @@ const options = {
 
 https.createServer(options, app).listen(8443, '0.0.0.0', () => {
   console.log('Secure Swarmy Enterprise Backend running on https://0.0.0.0:8443');
+});
+
+// --- SWARMY STUDIO WORKFLOW ENDPOINTS ---
+app.post('/api/workflow/save', (req, res) => {
+    const fs = require('fs');
+    const path = require('path');
+    const workflowPath = path.join(__dirname, 'swarmy_workflow.json');
+    
+    fs.writeFile(workflowPath, JSON.stringify(req.body, null, 2), (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, message: 'Workflow saved successfully.' });
+    });
+});
+
+app.post('/api/workflow/execute', (req, res) => {
+    const { spawn } = require('child_process');
+    const path = require('path');
+    const scriptPath = path.join(__dirname, 'swarmy_workflow_engine.py');
+    
+    // Spawn the executor in the background
+    const engine = spawn('bash', ['-c', 'source /opt/ros/melodic/setup.bash && source /home/swarmy_bot/swarmy_ws/devel/setup.bash && python3 ' + scriptPath]);
+    
+    engine.stdout.on('data', (data) => console.log(`[WorkflowEngine] ${data}`));
+    engine.stderr.on('data', (data) => console.error(`[WorkflowEngine] ERR: ${data}`));
+    
+    res.json({ success: true, message: 'Workflow execution triggered.' });
 });

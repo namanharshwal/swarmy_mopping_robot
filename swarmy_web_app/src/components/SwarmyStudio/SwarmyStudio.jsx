@@ -127,17 +127,43 @@ export default function SwarmyStudio() {
     });
   }, [setNodes]);
 
+  const handleSave = async () => {
+    try {
+      const response = await fetch('/api/workflow/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('swarmy_token')}` },
+        body: JSON.stringify({ nodes, edges })
+      });
+      if (response.ok) alert('Workflow saved successfully!');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleRun = async () => {
+    await handleSave();
+    try {
+      await fetch('/api/workflow/execute', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('swarmy_token')}` }
+      });
+      alert('Workflow execution started!');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', height: 'calc(100vh - 60px)', background: 'transparent', fontFamily: '"Rajdhani", sans-serif' }}>
       <ReactFlowProvider>
         <div style={{ flex: 1, position: 'relative' }} ref={reactFlowWrapper}>
           
           <div style={{ position: 'absolute', top: '24px', right: '24px', zIndex: 10, display: 'flex', gap: '12px' }}>
-            <button className="btn-tech" style={{ padding: '8px 20px', fontSize: '14px', letterSpacing: '1px' }}>
+            <button onClick={handleSave} className="btn-tech" style={{ padding: '8px 20px', fontSize: '14px', letterSpacing: '1px' }}>
               UPDATE
             </button>
-            <button className="btn-tech map-btn-red" style={{ padding: '8px 20px', fontSize: '14px', letterSpacing: '1px' }}>
-              UPDATE & EXIT
+            <button onClick={handleRun} className="btn-tech map-btn-red" style={{ padding: '8px 20px', fontSize: '14px', letterSpacing: '1px' }}>
+              UPDATE & RUN
             </button>
           </div>
 
