@@ -146,11 +146,14 @@ export default function SidebarMenu({ connected, handleLogout }) {
         <nav className="nav-container">
           {desktopCollapsed ? (
             <div className="minified-nav">
-              {MENU_DATA.flatMap(g => g.links).map(link => (
-                <Link key={link.to} to={link.to} className={`mini-link ${location.pathname === link.to ? 'active' : ''}`} title={link.label}>
-                  {link.icon}
-                </Link>
-              ))}
+              {MENU_DATA.flatMap(g => g.links).map(link => {
+                const tourClass = `tour-${link.label.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+                return (
+                  <Link key={link.to} to={link.to} className={`mini-link ${location.pathname === link.to ? 'active' : ''} ${tourClass}`} title={link.label}>
+                    {link.icon}
+                  </Link>
+                );
+              })}
             </div>
           ) : (
             <div className="accordion-nav">
