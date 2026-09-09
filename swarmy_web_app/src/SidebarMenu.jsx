@@ -52,6 +52,7 @@ const MENU_DATA = [
     links: [
       { to: "/system", label: "System Manager", icon: <Server size={18} /> },
       { to: "/settings", label: "Settings", icon: <Settings size={18} /> },
+      { to: "/guide", label: "System Guide", icon: <BookOpen size={18} /> },
       { to: "/about", label: "About Swarmy", icon: <Info size={18} /> },
     ]
   }
@@ -59,7 +60,8 @@ const MENU_DATA = [
 
 function NavGroup({ group, activePath, onNavClick }) {
   const isActiveGroup = group.links.some(l => l.to === activePath);
-  const [isOpen, setIsOpen] = useState(isActiveGroup);
+  const isTourPending = localStorage.getItem('swarmy_tour_completed_v2') !== 'true';
+  const [isOpen, setIsOpen] = useState(isActiveGroup || isTourPending);
 
   return (
     <div className="nav-group">
