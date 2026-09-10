@@ -1117,7 +1117,13 @@ app.post('/api/opcua/client/task', (req, res) => {
 });
 
 
-app.use(express.static('/home/swarmy_bot/swarmy_ws/src/swarmy_web_app/dist'));
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+app.use(express.static('/home/swarmy_bot/swarmy_ws/src/swarmy_web_app/dist', { etag: false, lastModified: false, maxAge: 0 }));
 
 // Fallback for React Router (SPA)
 app.get('*', (req, res) => {
