@@ -10,7 +10,7 @@ Jetson.GPIO==2.1.6
 # OLED Display
 luma.core==2.3.1
 luma.oled==3.8.1
-Pillow==9.5.0
+Pillow==8.4.0
 
 # Image / Math Processing
 numpy==1.19.5
