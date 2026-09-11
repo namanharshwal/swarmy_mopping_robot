@@ -60,8 +60,9 @@ fi
 # 3. Python Requirements (Python 3 & 2)
 echo "[3/6] Installing Python Dependencies..."
 sudo apt-get install -y python-pip
+export PIP_DEFAULT_TIMEOUT=1000
 pip install pyserial
-pip3 install -r "$SCRIPT_DIR/requirements.txt"
+pip3 install --default-timeout=1000 -r "$SCRIPT_DIR/requirements.txt"
 
 # 4. Install Node.js 14.x (Ubuntu 18.04's default nodejs is too old and broken)
 echo "[4/6] Installing Node.js 14.x LTS..."
