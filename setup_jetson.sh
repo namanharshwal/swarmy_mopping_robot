@@ -26,7 +26,9 @@ sudo apt-get install -y \
     build-essential \
     cmake \
     pkg-config \
-    swig
+    swig \
+    python3-numpy \
+    python3-opencv
 
 # 2. ROS Melodic Base & Packages (Assuming JetPack 4.6 / Ubuntu 18.04)
 echo "[2/6] Installing ROS Melodic & Navigation Packages..."
