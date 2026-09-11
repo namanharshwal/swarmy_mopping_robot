@@ -75,10 +75,15 @@ pip3 install --default-timeout=1000 -r "$SCRIPT_DIR/requirements.txt"
 
 # 4. Install Node.js 14.x (Ubuntu 18.04's default nodejs is too old and broken)
 echo "[4/6] Installing Node.js 14.x LTS..."
-# We unconditionally install from NodeSource because the default Ubuntu 18.04 
-# 'node' package is v8 and often misses npm.
-curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
-sudo apt-get install -y nodejs
+# The NodeSource APT repo changed their GPG keys and broke Ubuntu 18.04.
+# We bypass apt-get entirely and install the official ARM64 binary directly.
+if ! node --version 2>/dev/null | grep -q "v14"; then
+    cd /tmp
+    wget https://nodejs.org/dist/v14.21.3/node-v14.21.3-linux-arm64.tar.xz -O node14.tar.xz
+    tar -xf node14.tar.xz
+    sudo cp -R node-v14.21.3-linux-arm64/* /usr/
+    rm -rf node14.tar.xz node-v14.21.3-linux-arm64
+fi
 
 echo "   Node.js: $(node --version)"
 echo "   npm:     $(npm --version)"
