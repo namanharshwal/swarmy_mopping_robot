@@ -1,0 +1,59 @@
+{
+  "nodes": [
+    {
+      "id": "node_start",
+      "type": "input",
+      "data": {
+        "label": "START_FLOW"
+      }
+    },
+    {
+      "id": "node_move",
+      "type": "taskNode",
+      "data": {
+        "label": "go_to_place",
+        "config": {
+          "x": 3.5,
+          "y": -1.2
+        }
+      }
+    },
+    {
+      "id": "node_wait",
+      "type": "taskNode",
+      "data": {
+        "label": "wait_time",
+        "config": {
+          "duration": 2
+        }
+      }
+    },
+    {
+      "id": "node_speak",
+      "type": "actionNode",
+      "data": {
+        "label": "announce",
+        "config": {
+          "text": "Arrived at destination"
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_start",
+      "target": "node_move",
+      "sourceHandle": "success"
+    },
+    {
+      "source": "node_move",
+      "target": "node_wait",
+      "sourceHandle": "success"
+    },
+    {
+      "source": "node_wait",
+      "target": "node_speak",
+      "sourceHandle": "success"
+    }
+  ]
+}

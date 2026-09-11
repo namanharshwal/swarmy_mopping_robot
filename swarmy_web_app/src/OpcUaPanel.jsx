@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Server, Play, Square, Activity, ArrowRight, ShieldCheck, Cpu } from 'lucide-react';
+import { Server, Play, Square, Activity, ArrowRight, ShieldCheck, Cpu, MonitorUp } from 'lucide-react';
 
 const API_URL = `http://${window.location.hostname}:3001`;
 
 export default function OpcUaPanel() {
   const [status, setStatus] = useState('Checking...');
   const [logs, setLogs] = useState([]);
+  
+  // Client States
+  const [clientReadOutput, setClientReadOutput] = useState('Click "Read State" to fetch...');
+  const [cmdX, setCmdX] = useState('0.0');
+  const [cmdY, setCmdY] = useState('0.0');
+  const [cmdTask, setCmdTask] = useState('TEST_TASK');
   
   useEffect(() => {
     fetchStatus();
@@ -40,6 +46,45 @@ export default function OpcUaPanel() {
       addLog("Sent stop command to OPC UA Bridge...");
     } catch (e) {
       addLog(`Error: ${e.message}`);
+    }
+  };
+
+  const readClientState = async () => {
+    setClientReadOutput('Fetching...');
+    try {
+      const res = await fetch(`${API_URL}/api/opcua/client/read`);
+      const data = await res.json();
+      setClientReadOutput(data.output || data.error);
+    } catch (e) {
+      setClientReadOutput(`Error: ${e.message}`);
+    }
+  };
+
+  const sendClientMove = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/opcua/client/move`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ x: parseFloat(cmdX), y: parseFloat(cmdY) })
+      });
+      const data = await res.json();
+      addLog(`Client Sent Move: ${data.output || data.error}`);
+    } catch (e) {
+      addLog(`Client Error: ${e.message}`);
+    }
+  };
+
+  const sendClientTask = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/opcua/client/task`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task: cmdTask })
+      });
+      const data = await res.json();
+      addLog(`Client Sent Task: ${data.output || data.error}`);
+    } catch (e) {
+      addLog(`Client Error: ${e.message}`);
     }
   };
 
@@ -125,6 +170,46 @@ export default function OpcUaPanel() {
             <div key={i} style={{ marginBottom: '4px' }}>{log}</div>
           ))}
           {logs.length === 0 && <div>Ready. IO operations restricted to pins 20-30 to prevent system conflict.</div>}
+        </div>
+      </div>
+
+      {/* PLC Client Simulator Panel */}
+      <div className="panel" style={{ marginTop: '20px', background: 'rgba(0,0,0,0.5)' }}>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ffcc00' }}><MonitorUp size={18}/> PLC Simulator (OPC UA Client)</h2>
+        <p style={{ color: '#aaa', fontSize: '13px', marginBottom: '16px' }}>Use this to simulate a Siemens PLC reading and writing to the AMR via OPC UA.</p>
+        <div style={{ display: 'flex', gap: '20px' }}>
+            {/* Robot State Reader */}
+            <div style={{ flex: 1, border: '1px solid rgba(255, 204, 0, 0.3)', padding: '16px', borderRadius: '8px', background: 'rgba(255, 204, 0, 0.05)' }}>
+                <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', color: '#ffcc00' }}>Read Robot State</h3>
+                <button onClick={readClientState} className="btn-tech" style={{ padding: '8px 16px', border: '1px solid #ffcc00', color: '#ffcc00', background: 'transparent' }}>
+                  FETCH LIVE DATA
+                </button>
+                <pre style={{ background: '#0a0a0a', padding: '12px', marginTop: '12px', fontSize: '13px', color: '#10b981', border: '1px solid #333', borderRadius: '4px', whiteSpace: 'pre-wrap' }}>
+                  {clientReadOutput}
+                </pre>
+            </div>
+            
+            {/* Command Writer */}
+            <div style={{ flex: 1, border: '1px solid rgba(239, 68, 68, 0.3)', padding: '16px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.05)' }}>
+                <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', color: '#ef4444' }}>Send Commands (Write)</h3>
+                
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '4px' }}>Target Coordinates</label>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                      <input type="number" placeholder="X" value={cmdX} onChange={e=>setCmdX(e.target.value)} style={{ width: '80px', padding: '8px', background: '#222', color: 'white', border: '1px solid #444', borderRadius: '4px' }}/>
+                      <input type="number" placeholder="Y" value={cmdY} onChange={e=>setCmdY(e.target.value)} style={{ width: '80px', padding: '8px', background: '#222', color: 'white', border: '1px solid #444', borderRadius: '4px' }}/>
+                      <button onClick={sendClientMove} className="btn-tech map-btn-red" style={{ padding: '8px 16px' }}>Send Move</button>
+                  </div>
+                </div>
+                
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '4px' }}>Logic Task</label>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                      <input type="text" placeholder="e.g. UNLOCK_CONVEYOR" value={cmdTask} onChange={e=>setCmdTask(e.target.value)} style={{ flex: 1, padding: '8px', background: '#222', color: 'white', border: '1px solid #444', borderRadius: '4px' }}/>
+                      <button onClick={sendClientTask} className="btn-tech map-btn-red" style={{ padding: '8px 16px' }}>Send Task</button>
+                  </div>
+                </div>
+            </div>
         </div>
       </div>
     </div>

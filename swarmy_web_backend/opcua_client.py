@@ -67,7 +67,10 @@ def main():
         print(f"OPC UA Client Error: {e}")
         print("Make sure the OPC UA Server is running in the Swarmy web panel!")
     finally:
-        client.disconnect()
+        try:
+            client.disconnect()
+        except:
+            pass
         print("Disconnected.")
 
 if __name__ == "__main__":
