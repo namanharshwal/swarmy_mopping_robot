@@ -64,6 +64,13 @@ echo "[3/6] Installing Python Dependencies..."
 sudo apt-get install -y python-pip
 export PIP_DEFAULT_TIMEOUT=1000
 pip install pyserial
+
+# CRITICAL FIX for Ubuntu 18.04 / Python 3.6:
+# Upgrade setuptools and pre-install an older setuptools_scm so that it doesn't crash 
+# trying to download the latest Python 3.7+ version when compiling cbor2
+python3 -m pip install --user --upgrade "setuptools<58.0" wheel
+python3 -m pip install --user "setuptools_scm<7.0"
+
 pip3 install --default-timeout=1000 -r "$SCRIPT_DIR/requirements.txt"
 
 # 4. Install Node.js 14.x (Ubuntu 18.04's default nodejs is too old and broken)
