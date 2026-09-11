@@ -14,6 +14,7 @@ echo "========================================="
 
 # 1. System Dependencies
 echo "[1/6] Installing System Dependencies (APT)..."
+sudo rm -f /etc/apt/sources.list.d/nodesource.list
 sudo apt-get update
 sudo apt-get install -y \
     ffmpeg \
