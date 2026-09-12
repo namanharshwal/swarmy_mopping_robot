@@ -14,3 +14,6 @@ Pillow==8.4.0
 
 # Image / Math Processing (Use system packages instead of pip)
 # sudo apt-get install python3-numpy python3-opencv
+
+# OPC UA Client Node
+asyncua==0.9.92
