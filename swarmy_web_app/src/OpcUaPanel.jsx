@@ -13,6 +13,36 @@ export default function OpcUaPanel() {
   const [cmdY, setCmdY] = useState('0.0');
   const [cmdTask, setCmdTask] = useState('TEST_TASK');
   
+  // Bridge State
+  const [bridgeRunning, setBridgeRunning] = useState(false);
+  const authHeaders = () => {
+    return { 'Authorization': `Bearer ${localStorage.getItem('swarmy_token')}` };
+  };
+
+  const startBridge = async () => {
+    try {
+      await fetch(`${API_URL}/api/launch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ command: 'rosrun swarmy_navigation kepware_bridge.py' })
+      });
+      setBridgeRunning(true);
+      setLogs(prev => [`[BRIDGE] Connecting to KEPServerEX...`, ...prev]);
+    } catch(e) { console.error(e); }
+  };
+
+  const stopBridge = async () => {
+    try {
+      await fetch(`${API_URL}/api/terminal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ command: 'pkill -9 -f kepware_bridge.py' })
+      });
+      setBridgeRunning(false);
+      setLogs(prev => [`[BRIDGE] Disconnected from Siemens Master.`, ...prev]);
+    } catch(e) { console.error(e); }
+  };
+  
   useEffect(() => {
     fetchStatus();
     const interval = setInterval(fetchStatus, 3000);
@@ -159,6 +189,24 @@ export default function OpcUaPanel() {
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+      
+      {/* Siemens PLC Wireless Integration (Client Bridge) */}
+      <div className="panel" style={{ marginTop: '20px', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255, 102, 0, 0.3)' }}>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ff6600' }}>
+          <Activity size={18}/> Siemens PLCSIM Advanced (Wireless Bridge)
+        </h2>
+        <p style={{ color: '#aaa', fontSize: '13px', marginBottom: '16px' }}>
+          Starts the internal Python OPC UA Client (kepware_bridge.py) to connect securely to Windows KEPServerEX and listen for StartNAV commands.
+        </p>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <button onClick={startBridge} className="btn-tech" style={{ flex: 1, padding: '12px', fontSize: '16px', background: bridgeRunning ? '#333' : 'rgba(255, 102, 0, 0.2)', color: bridgeRunning ? '#888' : '#ff6600', border: `1px solid ${bridgeRunning ? '#555' : '#ff6600'}` }} disabled={bridgeRunning}>
+            <Play size={18}/> START PLC BRIDGE NODE
+          </button>
+          <button onClick={stopBridge} className="btn-tech" style={{ flex: 1, padding: '12px', fontSize: '16px', background: !bridgeRunning ? '#333' : 'rgba(239, 68, 68, 0.2)', color: !bridgeRunning ? '#888' : '#ef4444', border: `1px solid ${!bridgeRunning ? '#555' : '#ef4444'}` }} disabled={!bridgeRunning}>
+            <Square size={18}/> STOP BRIDGE
+          </button>
         </div>
       </div>
       
